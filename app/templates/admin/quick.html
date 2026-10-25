@@ -1,0 +1,44 @@
+{% extends "admin/base.html" %}
+{% block title %}เช็คว่าง / ตอบแชท{% endblock %}
+{% block heading %}เช็คว่าง / ตอบแชทลูกค้า{% endblock %}
+{% block content %}
+<form class="panel qq-form" method="get" action="/admin/quick">
+  <div class="field" style="margin:0"><label for="q-ci">เช็คอิน</label><input id="q-ci" type="date" name="ci" value="{{ ci }}"></div>
+  <div class="field" style="margin:0"><label for="q-co">เช็คเอาท์</label><input id="q-co" type="date" name="co" value="{{ co }}"></div>
+  <div class="field" style="margin:0"><label for="q-g">จำนวนผู้เข้าพัก</label><input id="q-g" type="number" min="1" max="60" name="guests" value="{{ guests }}"></div>
+  <button class="btn">เช็คเลย</button>
+</form>
+
+<div class="cols-2-1">
+  <div class="panel panel--flush">
+    <div class="panel__head" style="padding:16px 20px 0"><h2>{{ thai_date(ci, year=False) }} – {{ thai_date(co) }} · {{ nights }} คืน · {{ guests }} ท่าน</h2></div>
+    <div class="t-wrap"><table class="t">
+      <thead><tr><th>บ้าน</th><th>พักได้</th><th>สถานะ</th><th class="num">ราคารวม</th><th></th></tr></thead>
+      <tbody>{% for r in rows %}
+        <tr>
+          <td><b>{{ r.h.name_th }}</b></td>
+          <td>{{ r.h.max_guests }} ท่าน{% if not r.fits %} <span class="qq-no small">(ไม่พอ)</span>{% endif %}</td>
+          <td>{% if r.free %}<span class="st st--completed">ว่าง</span>
+              {% else %}<span class="st st--confirmed">ไม่ว่าง</span>
+                <span class="small muted">{% if r.conflict %}{{ r.conflict.code or r.conflict.reason }}{% endif %}{% if r.next %} · ว่างอีกครั้ง {{ thai_date(r.next, year=False) }}{% endif %}</span>{% endif %}</td>
+          <td class="num">{% if r.q.ok %}{{ money(r.q.total) }}{% if r.q.discount_total %}<br><span class="small muted">ลด {{ money(r.q.discount_total) }}</span>{% endif %}{% else %}<span class="small muted">-</span>{% endif %}</td>
+          <td class="nowrap">{% if r.free and r.fits %}<a class="btn btn--sm" href="/admin/bookings/new?house={{ r.h.id }}&ci={{ ci }}&co={{ co }}">จองให้</a>
+            <button type="button" class="btn btn--sm btn--ghost" data-copy="{{ r.link }}">ลิงก์จอง</button>{% endif %}</td>
+        </tr>{% endfor %}</tbody>
+    </table></div>
+  </div>
+  <div class="panel">
+    <h2>ข้อความตอบลูกค้า</h2>
+    <p class="small muted">ระบบเขียนให้จากราคาและโปรโมชั่นจริง แก้ไขได้ก่อนคัดลอกไปวางใน LINE / Facebook</p>
+    <textarea class="qq-reply" id="qq-reply" aria-label="ข้อความตอบลูกค้า">{{ reply }}</textarea>
+    <button type="button" class="btn" style="margin-top:10px" id="qq-copy">คัดลอกข้อความ</button>
+  </div>
+</div>
+<script>
+document.getElementById("qq-copy").addEventListener("click", async (e) => {
+  const t = document.getElementById("qq-reply").value, b = e.currentTarget;
+  try { await navigator.clipboard.writeText(t); b.textContent = "คัดลอกแล้ว"; setTimeout(() => (b.textContent = "คัดลอกข้อความ"), 1500); }
+  catch (err) { document.getElementById("qq-reply").select(); }
+});
+</script>
+{% endblock %}

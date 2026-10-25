@@ -1,0 +1,37 @@
+{% extends "admin/base.html" %}
+{% block title %}บ้านพักและราคา{% endblock %}
+{% block heading %}บ้านพักและราคา{% endblock %}
+{% block content %}
+<div class="panel panel--flush">
+  <div class="t-wrap"><table class="t">
+    <thead><tr><th>บ้าน</th><th>ประเภท</th><th>ตำแหน่ง</th><th>พักได้</th><th>เตียง</th><th class="num">วันธรรมดา</th><th class="num">ศุกร์-เสาร์</th><th>รูป</th><th>สถานะ</th></tr></thead>
+    <tbody>{% for h in houses %}
+      <tr class="is-link" data-href="/admin/houses/{{ h.id }}"><td><a href="/admin/houses/{{ h.id }}"><b>{{ h.name_th }}</b></a><br><span class="small muted">{{ h.name_en }}</span></td>
+        <td>{{ KINDS[h.kind][0] }}</td><td>{{ 'ซ้าย' if h.side=='L' else 'ขวา' }} {{ h.position }}</td><td>{{ h.std_guests }}{% if h.max_guests != h.std_guests %}–{{ h.max_guests }}{% endif %}</td>
+        <td class="small">{{ h.beds_th }}</td><td class="num">{{ money(h.price_weekday) }}</td><td class="num">{{ money(h.price_weekend) }}</td><td>{{ h.photos|length }}</td>
+        <td>{% if h.is_active %}<span class="st st--completed">เปิดขาย</span>{% else %}<span class="st st--cancelled">ปิดขาย</span>{% endif %}</td></tr>
+    {% endfor %}</tbody></table></div>
+</div>
+
+<div class="panel" id="rates">
+  <div class="panel__head"><h2>ช่วงราคาพิเศษและวันหยุด</h2></div>
+  <p class="small muted">ใช้ปรับราคาช่วง High season วันหยุดยาว หรือปีใหม่ ถ้าใส่ "ราคาต่อคืน" จะแทนราคาปกติ ถ้าใส่ "บวก/ลบ" จะปรับจากราคาปกติ เว้นว่างทั้งสองช่องเพื่อติดป้ายวันหยุดอย่างเดียว ช่วงที่ระบุบ้านเฉพาะหลังมีผลก่อนช่วงที่ระบุประเภท</p>
+  <div class="t-wrap" style="margin-bottom:16px"><table class="t"><thead><tr><th>ชื่อ</th><th>ช่วงวันที่ (คืน)</th><th>ใช้กับ</th><th class="num">ราคา/คืน</th><th class="num">บวก/ลบ</th><th></th></tr></thead><tbody>
+    {% for r in rates %}<tr><td>{{ r.name }}{% if r.is_holiday %} <span class="st st--pending">วันหยุด</span>{% endif %}</td><td>{{ thai_date(r.start_date) }} – {{ thai_date(r.end_date) }}</td>
+      <td>{{ KINDS[r.house_kind][0] if r.house_kind else 'ทุกหลัง' }}</td><td class="num">{{ money(r.price) if r.price is not none else '-' }}</td><td class="num">{{ money(r.adjust_amount) if r.adjust_amount is not none else '-' }}</td>
+      <td><form method="post" action="/admin/rates/{{ r.id }}/delete" data-confirm="ลบช่วงราคานี้?"><button class="btn btn--ghost btn--sm">ลบ</button></form></td></tr>
+    {% else %}<tr><td colspan="6" class="empty">ยังไม่มี</td></tr>{% endfor %}
+  </tbody></table></div>
+  <form method="post" action="/admin/rates" style="display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1fr 1fr auto auto;gap:10px;align-items:end">
+    <div><label>ชื่อช่วง</label><input name="name" placeholder="เช่น วันหยุดยาว ธ.ค." required></div>
+    <div><label>ตั้งแต่คืน</label><input type="date" name="start_date" required></div>
+    <div><label>ถึงคืน</label><input type="date" name="end_date" required></div>
+    <div><label>ใช้กับ</label><select name="house_kind"><option value="">ทุกหลัง</option>{% for k, v in KINDS.items() %}<option value="{{ k }}">{{ v[0] }}</option>{% endfor %}</select></div>
+    <div><label>ราคา/คืน</label><input name="price" inputmode="decimal"></div>
+    <div><label>บวก/ลบ</label><input name="adjust_amount" inputmode="decimal" placeholder="+500"></div>
+    <label class="check" style="margin-bottom:10px"><input type="checkbox" name="is_holiday" value="1"> วันหยุด</label>
+    <button class="btn">เพิ่ม</button>
+  </form>
+  <style>@media (max-width:1100px){ #rates form{grid-template-columns:1fr 1fr !important} }</style>
+</div>
+{% endblock %}

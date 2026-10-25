@@ -1,0 +1,30 @@
+{% extends "admin/base.html" %}
+{% block title %}ผู้ใช้งาน{% endblock %}
+{% block heading %}ผู้ใช้งาน{% endblock %}
+{% block content %}
+{% set ROLE_TH = {'owner':'เจ้าของ (ทุกเมนู)','manager':'ผู้จัดการ','sales':'แอดมินฝ่ายขาย','housekeeping':'แม่บ้าน'} %}
+<p class="muted">แอดมินแต่ละคนมีชื่อผู้ใช้ของตัวเอง ระบบจึงบันทึกได้ว่าใครปิดการขายและใครแก้ไขอะไร ใส่ LINE User ID เพื่อให้ระบบส่งแจ้งเตือนค่าคอมทาง LINE ส่วนตัว</p>
+{% for u in rows %}
+<form method="post" action="/admin/users/{{ u.id }}" class="panel" style="display:grid;grid-template-columns:1fr 1fr 1fr 1.2fr 1fr auto;gap:10px;align-items:end">
+  <div><label>ชื่อผู้ใช้</label><input value="{{ u.username }}" disabled></div>
+  <div><label>ชื่อที่แสดง</label><input name="display_name" value="{{ u.display_name }}"></div>
+  <div><label>สิทธิ์</label><select name="role">{% for r in roles %}<option value="{{ r }}" {% if u.role==r %}selected{% endif %}>{{ ROLE_TH[r] }}</option>{% endfor %}</select></div>
+  <div><label>LINE User ID</label><input name="line_user_id" value="{{ u.line_user_id }}" placeholder="Uxxxxxxxx"></div>
+  <div><label>รหัสผ่านใหม่</label><input name="password" type="password" placeholder="เว้นว่าง = ไม่เปลี่ยน" autocomplete="new-password"></div>
+  <div class="chk-row" style="flex-direction:column;gap:2px"><label><input type="checkbox" name="earns_commission" value="1" {% if u.earns_commission %}checked{% endif %}> รับค่าคอม</label><label><input type="checkbox" name="active" value="1" {% if u.active %}checked{% endif %}> ใช้งาน</label></div>
+  <input type="hidden" name="phone" value="{{ u.phone }}">
+  <button class="btn btn--ghost btn--sm" style="grid-column:1/-1;justify-self:start">บันทึก {{ u.display_name }}</button>
+</form>
+{% endfor %}
+<form method="post" action="/admin/users/0" class="panel" style="display:grid;grid-template-columns:repeat(5,1fr) auto;gap:10px;align-items:end">
+  <h2 style="grid-column:1/-1">เพิ่มผู้ใช้</h2>
+  <div><label>ชื่อผู้ใช้ (ภาษาอังกฤษ)</label><input name="username" required></div>
+  <div><label>ชื่อที่แสดง</label><input name="display_name" placeholder="แอดมินฟ้า"></div>
+  <div><label>สิทธิ์</label><select name="role">{% for r in roles %}<option value="{{ r }}" {% if r=='sales' %}selected{% endif %}>{{ ROLE_TH[r] }}</option>{% endfor %}</select></div>
+  <div><label>รหัสผ่าน (8 ตัวขึ้นไป)</label><input name="password" type="password" required autocomplete="new-password"></div>
+  <div><label>LINE User ID</label><input name="line_user_id"></div>
+  <input type="hidden" name="earns_commission" value="1"><input type="hidden" name="active" value="1">
+  <button class="btn">เพิ่ม</button>
+</form>
+<style>@media (max-width:1100px){form.panel{grid-template-columns:1fr 1fr !important}}</style>
+{% endblock %}

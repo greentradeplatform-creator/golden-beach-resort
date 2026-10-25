@@ -1,0 +1,48 @@
+{% extends "admin/base.html" %}
+{% block title %}ค่าคอม{% endblock %}
+{% block heading %}{{ 'กระเป๋าค่าคอมของฉัน' if target.id == user.id else 'ค่าคอมของ ' ~ target.display_name }}{% endblock %}
+{% block content %}
+{% if see_all and team %}
+<div class="panel panel--flush">
+  <div class="panel__head" style="padding:16px 20px 0"><h2>ทีมขาย เดือนนี้</h2></div>
+  <div class="t-wrap"><table class="t">
+    <thead><tr><th>แอดมิน</th><th class="num">ปิดการขายเดือนนี้ (เคส)</th><th class="num">ค่าคอมเดือนนี้</th><th class="num">ค้างจ่าย</th><th></th></tr></thead>
+    <tbody>{% for r in team %}
+      <tr {% if r.u.id == target.id %}style="background:#FBF7F0"{% endif %}><td><a href="?uid={{ r.u.id }}">{{ r.u.display_name }}</a></td><td class="num">{{ r.cases }}</td><td class="num">{{ money(r.month) }}</td><td class="num"><b>{{ money(r.unpaid) }}</b></td>
+        <td>{% if r.unpaid > 0 %}<form method="post" action="/admin/payouts" data-confirm="สรุปยอดค้างจ่าย {{ money(r.unpaid) }} บาท ของ {{ r.u.display_name }}?"><input type="hidden" name="user_id" value="{{ r.u.id }}"><button class="btn btn--sm">สรุปยอดจ่าย</button></form>{% endif %}</td></tr>
+    {% endfor %}</tbody></table></div>
+</div>
+{% endif %}
+
+<dl class="figs">
+  <div><dt>ยอดค้างรับ (ยังไม่สรุปจ่าย)</dt><dd>{{ money(unpaid) }}</dd></div>
+  <div><dt>ค่าคอมสะสมทั้งหมด</dt><dd>{{ money(lifetime) }}</dd></div>
+  <div><dt>รอบจ่ายที่รอโอน</dt><dd>{{ payouts|selectattr('status','equalto','unpaid')|list|length }}</dd></div>
+</dl>
+
+<div class="cols-2-1">
+  <div class="panel panel--flush">
+    <div class="panel__head" style="padding:16px 20px 0"><h2>รายการเข้าออกกระเป๋า</h2></div>
+    <div class="t-wrap"><table class="t">
+      <thead><tr><th>วันที่</th><th>รายการ</th><th>สถานะ</th><th class="num">จำนวน</th></tr></thead>
+      <tbody>{% for e in entries %}
+        <tr><td class="nowrap">{{ thai_date(e.created_at) }}</td><td>{% if e.booking_id %}<a href="/admin/bookings/{{ e.booking_id }}">{{ e.note }}</a>{% else %}{{ e.note }}{% endif %}</td>
+          <td>{% if e.payout_id %}<span class="st st--completed">สรุปจ่ายแล้ว</span>{% else %}<span class="st st--pending">ค้างรับ</span>{% endif %}</td>
+          <td class="num" style="color:{{ 'var(--taken)' if e.amount|float < 0 else 'var(--lawn)' }}">{{ '+' if e.amount|float > 0 }}{{ money(e.amount) }}</td></tr>
+      {% else %}<tr><td colspan="4" class="empty" style="padding:20px">ยังไม่มีค่าคอม ค่าคอมจะเข้าทันทีเมื่อการจองที่คุณปิดได้ชำระครบ</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </div>
+  <div class="panel">
+    <h2>รอบการจ่าย</h2>
+    {% for p in payouts %}
+    <div style="padding:10px 0;border-bottom:1px solid var(--line)">
+      <b>{{ money(p.amount) }} บาท</b> <span class="small muted">สรุป {{ thai_date(p.created_at) }}</span><br>
+      {% if p.status == 'paid' %}<span class="st st--completed">จ่ายแล้ว {{ thai_date(p.paid_at) }}</span>
+      {% else %}<span class="st st--pending">ยังไม่จ่าย</span>
+        {% if user.role == 'owner' %}<form method="post" action="/admin/payouts/{{ p.id }}/paid" class="inline" data-confirm="ยืนยันว่าโอนเงิน {{ money(p.amount) }} บาท แล้ว?"><button class="btn btn--ok btn--sm" style="margin-left:6px">จ่ายแล้ว</button></form>{% endif %}
+      {% endif %}
+    </div>
+    {% else %}<p class="empty">ยังไม่มีรอบจ่าย</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

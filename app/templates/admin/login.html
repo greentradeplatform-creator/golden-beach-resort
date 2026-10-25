@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">
+<title>เข้าสู่ระบบหลังบ้าน | Golden Beach</title>
+<link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/css/site.css?v=8"><link rel="stylesheet" href="/static/css/admin.css?v=9"></head>
+<body class="adm">
+<div class="login">
+  <div class="login__img" role="img" aria-label="ทางเดินระหว่างบ้านพัก"></div>
+  <div class="login__form">
+    <form method="post" action="/admin/login">
+      <div style="font-family:var(--display);font-size:28px;color:var(--teak-night)">โกลเด้น บีช รีสอร์ท</div>
+      <p class="muted" style="margin-bottom:26px">ระบบหลังบ้านสำหรับทีมงาน</p>
+      {% if error %}<div class="alert alert--error">{{ error }}</div>{% endif %}
+      <div class="field"><label for="u">ชื่อผู้ใช้</label><input id="u" name="username" autocomplete="username" autocapitalize="none" required autofocus></div>
+      <div class="field"><label for="p">รหัสผ่าน</label><input id="p" name="password" type="password" autocomplete="current-password" required></div>
+      <button class="btn btn--block" type="submit">เข้าสู่ระบบ</button>
+    </form>
+  </div>
+</div>
+</body></html>

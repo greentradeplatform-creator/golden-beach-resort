@@ -1,0 +1,213 @@
+{% extends "public/base.html" %}
+{% block headclass %}{% endblock %}
+{% block main %}
+{% set big = houses|selectattr('kind','ne','small')|list %}
+<section class="hero">
+  <img class="hero__img" src="/static/img/hero-house.jpg" srcset="/static/img/hero-house-m.jpg 900w, /static/img/hero-house.jpg 1800w" sizes="100vw" alt="{{ tt('บ้านไม้สักหลังหน้าสุด ติดร่มชมพูของ Tutu Beach', 'Teak house at the front of the resort beside Tutu Beach') }}" fetchpriority="high">
+  <div class="wrap hero__in">
+    <h1 class="hero__rise">{{ tt('บ้านไม้สักริมหาดนาจอมเทียน', 'Teak houses on Na Jomtien beach') }}</h1>
+    <p class="hero__rise">{{ tt('9 หลังเรียงสองฝั่งทางเดินลงทะเล อยู่ติด Tutu Beach หลังละ 2–5 ท่าน เริ่มคืนละ ' ~ money(from_price) ~ ' บาท รวมอาหารเช้า', 'Nine houses lining a path down to the sea, right next to Tutu Beach. 2–5 guests each, from ' ~ money(from_price) ~ ' baht a night with breakfast.') }}</p>
+    <form class="search hero__rise" action="{{ L }}/" method="get" data-search>
+      <div class="search__f"><label for="s-ci">{{ tt('เช็คอิน', 'Check-in') }}</label><input id="s-ci" type="date" name="ci" value="{{ ci }}" min="{{ today }}" required></div>
+      <div class="search__f"><label for="s-co">{{ tt('เช็คเอาท์', 'Check-out') }}</label><input id="s-co" type="date" name="co" value="{{ co }}" min="{{ ci }}" required></div>
+      <div class="search__f"><label for="s-g">{{ tt('ผู้เข้าพัก', 'Guests') }}</label>
+        <select id="s-g" name="guests">{% for n in range(1, 6) %}<option value="{{ n }}" {% if n == guests %}selected{% endif %}>{{ n }} {{ tt('ท่าน', 'guest' if n == 1 else 'guests') }}</option>{% endfor %}</select></div>
+      <button class="btn" type="submit">{{ tt('ดูบ้านที่ว่าง', 'See free houses') }}</button>
+    </form>
+  </div>
+</section>
+
+<div class="facts">
+  <ul class="wrap">
+    <li>{{ icon('wave', 22) }} {{ tt('ติดทะเล หาดส่วนตัว', 'Right on the beach') }}</li>
+    <li>{{ icon('bowl', 22) }} {{ tt('อาหารเช้ารวมทุกหลัง', 'Breakfast in every house') }}</li>
+    <li>{{ icon('paw', 22) }} {{ tt('สัตว์เลี้ยงเข้าพักฟรี', 'Pets stay free') }}</li>
+    <li>{{ icon('grill', 22) }} {{ tt('ปิ้งย่างหน้าบ้านได้', 'BBQ at your porch') }}</li>
+    <li>{{ icon('car', 22) }} {{ tt('ที่จอดรถในรีสอร์ท', 'Parking on site') }}</li>
+  </ul>
+</div>
+
+<section class="plan-sec" id="plan">
+  <div class="wrap">
+    <div class="plan-head">
+      <div>
+        <h2>{{ tt('เลือกบ้านจากผังรีสอร์ท', 'Pick your house on the map') }}</h2>
+        <p>{{ tt('ผังนี้วาดตามตำแหน่งจริง ทะเลอยู่ด้านบน บ้านสองหลังแรกติดชายหาดที่สุด กดที่ป้ายชื่อบ้านเพื่อดูรายละเอียดและราคาตามวันที่เลือก', 'Drawn to the real layout with the sea at the top; the first two houses are closest to the beach. Tap a sign to see the house and the price for your dates.') }}</p>
+      </div>
+      <form class="plan-dates" data-plan-form>
+        <div class="field"><label for="p-ci">{{ tt('เช็คอิน', 'Check-in') }}</label><input id="p-ci" type="date" name="ci" value="{{ ci }}" min="{{ today }}"></div>
+        <div class="field"><label for="p-co">{{ tt('เช็คเอาท์', 'Check-out') }}</label><input id="p-co" type="date" name="co" value="{{ co }}" min="{{ ci }}"></div>
+        <div class="field"><label for="p-g">{{ tt('ผู้เข้าพัก', 'Guests') }}</label>
+          <select id="p-g" name="guests">{% for n in range(1, 6) %}<option value="{{ n }}" {% if n == guests %}selected{% endif %}>{{ n }}</option>{% endfor %}</select></div>
+      </form>
+    </div>
+
+    <div class="plan-layout">
+      <div class="plan" data-plan data-nights="{{ (co - ci).days }}">
+        <div class="plan__sea"><span>{{ tt('ทะเล', 'The sea') }}</span>
+          <svg viewBox="0 0 600 26" preserveAspectRatio="none" aria-hidden="true"><path d="M0 26V14c25 0 25-10 50-10s25 10 50 10 25-10 50-10 25 10 50 10 25-10 50-10 25 10 50 10 25-10 50-10 25 10 50 10 25-10 50-10 25 10 50 10 25-10 50-10 25 10 50 10v12Z" fill="#EADFC9"/></svg>
+        </div>
+        <div class="plan__beach"></div>
+        <div class="plan__grid">
+          {% for side in ['L', 'R'] %}
+          {% if side == 'R' %}<div class="plan__path"><span>{{ tt('ทางเดินระหว่างบ้าน', 'Footpath') }}</span></div>{% endif %}
+          <div class="plan__col">
+            {% for h in houses if h.side == side %}{% set p = plan[h.id] %}
+            <button type="button" class="plaque {% if h.kind == 'small' %}plaque--small{% endif %} {% if not p.free %}is-taken{% elif not p.fits %}is-nofit{% endif %}"
+              data-house="{{ h.id }}" aria-pressed="false">
+              <span class="plaque__name">{{ h.name(lang) }}</span>
+              <span class="plaque__meta">{{ tt(KINDS[h.kind][0], KINDS[h.kind][1]) }} {{ h.max_guests }} {{ tt('ท่าน', 'guests') }}</span>
+              <span class="plaque__row">
+                <span class="plaque__price" data-price>{{ money(h.price_weekday) }}</span>
+                <span class="plaque__state" data-state>{% if not p.free %}{{ tt('ไม่ว่าง', 'Taken') }}{% elif not p.fits %}{{ tt('เกินจำนวน', 'Too small') }}{% else %}{{ tt('ว่าง', 'Free') }}{% endif %}</span>
+              </span>
+            </button>
+            {% endfor %}
+          </div>
+          {% endfor %}
+        </div>
+        <div class="plan__legend">
+          <span><i style="background:var(--teak-night)"></i>{{ tt('บ้านหลังใหญ่', 'Big house') }}</span>
+          <span><i style="background:var(--teak)"></i>{{ tt('บ้านหลังเล็ก', 'Small house') }}</span>
+          <span data-legend-dates>{{ tt('สถานะว่างของคืนวันที่', 'Showing') }} {{ thai_date(ci, year=False) }}{% if (co-ci).days > 1 %} – {{ thai_date(co, year=False) }}{% endif %}</span>
+        </div>
+      </div>
+
+      <aside class="pick" data-pick aria-live="polite">
+        <div class="pick__empty" data-pick-empty>
+          <h3>{{ tt('ยังไม่ได้เลือกบ้าน', 'No house picked yet') }}</h3>
+          <p>{{ tt('กดป้ายชื่อบ้านในผังเพื่อดูรูป การจัดเตียง และราคารวมของวันที่เลือก ป้ายสีเทาคือบ้านที่ไม่ว่างในช่วงนั้น', 'Tap a house sign to see photos, beds and the total for your dates. Grey signs are taken on those dates.') }}</p>
+        </div>
+        {% for h in houses %}
+        <div class="pick__house" data-pick-house="{{ h.id }}" hidden>
+          <img width="900" height="600" class="pick__img" src="{{ h.cover|replace('.jpg','-m.jpg') if h.cover.startswith('/static') else h.cover }}" alt="{{ h.name(lang) }}" loading="lazy">
+          <div class="pick__body">
+            <h3>{{ h.name(lang) }}</h3>
+            <div class="muted small">{{ tt(KINDS[h.kind][0], KINDS[h.kind][1]) }}</div>
+            <dl>
+              <dt>{{ tt('พักได้', 'Sleeps') }}</dt><dd>{{ h.max_guests }} {{ tt('ท่าน', 'guests') }}</dd>
+              <dt>{{ tt('ห้องนอน', 'Bedrooms') }}</dt><dd>{{ h.bedrooms }}</dd>
+              <dt>{{ tt('เตียง', 'Beds') }}</dt><dd>{{ tt(h.beds_th, h.beds_en) }}</dd>
+            </dl>
+            <div class="pick__total"><span data-pick-label>{{ tt('ราคารวม', 'Total') }}</span><span class="price" data-pick-total>{{ money(plan[h.id].total) }}</span></div>
+            <p class="small muted" data-pick-note></p>
+            <a class="btn btn--block" data-pick-book href="{{ L }}/book?house={{ h.slug }}&ci={{ ci }}&co={{ co }}&adults={{ [guests, h.max_guests]|min }}">{{ tt('จองหลังนี้', 'Book this house') }}</a>
+            <p style="margin:10px 0 0;text-align:center"><a class="small" href="{{ L }}/houses/{{ h.slug }}">{{ tt('ดูรูปและรายละเอียดทั้งหมด', 'All photos and details') }}</a></p>
+          </div>
+        </div>
+        {% endfor %}
+      </aside>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>{{ tt('บ้านสามขนาด ราคาเดียวทั้งหลัง', 'Three sizes, one price per house') }}</h2>
+    <p class="lede">{{ tt('คิดราคาเป็นหลัง ไม่ใช่รายคน ทุกหลังเป็นไม้สักยกพื้น มีแอร์ ทีวี ตู้เย็น น้ำอุ่น Wi-Fi และระเบียงไม้หน้าบ้าน', 'Priced per house, not per person. Every house is raised teak with air-con, TV, fridge, hot shower, Wi-Fi and a wooden porch.') }}</p>
+    <div class="types">
+      {% set groups = [('big_front', '/static/img/phutthaksa-m.jpg', tt('สองหลังแรกจากชายหาด ได้ยินเสียงคลื่นจากระเบียง สองห้องนอน เหมาะกับสองครอบครัว', 'The two houses nearest the sand. Two bedrooms, waves from the porch.')),
+                       ('big', '/static/img/living-sofa-m.jpg', tt('สองห้องนอนพร้อมห้องนั่งเล่นและมุมครัวเล็ก ดอกบัวพักได้ถึง 5 ท่าน', 'Two bedrooms plus a living room and kitchenette. Bua sleeps five.')),
+                       ('small', '/static/img/room-queen-grey-m.jpg', tt('หนึ่งห้องนอนสำหรับคู่รักหรือเพื่อนสองคน เลือกได้ทั้งเตียงใหญ่และเตียงแยก', 'One bedroom for couples or two friends, with a big bed or twin beds.'))] %}
+      {% for kind, img, text in groups %}
+      {% set hs = houses|selectattr('kind','equalto',kind)|list %}
+      {% if hs %}
+      <div class="type">
+        <img width="900" height="600" src="{{ img }}" srcset="{{ (img)|srcset }}" sizes="(max-width: 760px) 92vw, 300px" alt="" loading="lazy">
+        <div>
+          <h3>{{ tt(KINDS[kind][0], KINDS[kind][1]) }} {{ tt('พักได้', 'for') }} {{ hs|map(attribute='max_guests')|min }}{% if hs|map(attribute='max_guests')|max != hs|map(attribute='max_guests')|min %}–{{ hs|map(attribute='max_guests')|max }}{% endif %} {{ tt('ท่าน', 'guests') }}</h3>
+          <p style="margin:0;color:var(--ink-2)">{{ text }}</p>
+          <ul class="type__houses">{% for h in hs %}<li><a href="{{ L }}/houses/{{ h.slug }}">{{ h.name(lang) }}</a></li>{% endfor %}</ul>
+        </div>
+        <div class="type__price"><span class="price">{{ money(hs|map(attribute='price_weekday')|min) }}</span><span class="muted small">{{ tt('บาท / คืน', 'baht / night') }}</span></div>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+
+    <div class="incl">
+      <div>{{ icon('bowl', 28) }}<strong>{{ tt('อาหารเช้าทุกหลัง', 'Breakfast for every house') }}</strong><p>{{ tt('โจ๊กหมูร้อน ๆ ตามจำนวนผู้เข้าพัก ยกมาเสิร์ฟถึงบ้าน', 'Hot rice porridge for everyone staying, brought to your house.') }}</p></div>
+      <div>{{ icon('paw', 28) }}<strong>{{ tt('พาน้องหมาน้องแมวมาได้', 'Bring the dog') }}</strong><p>{{ tt('สัตว์เลี้ยงเข้าพักฟรี แจ้งล่วงหน้าตอนจอง', 'Pets stay free; just tell us when you book.') }}</p></div>
+      <div>{{ icon('grill', 28) }}<strong>{{ tt('ปิ้งย่างหน้าบ้าน', 'BBQ at the porch') }}</strong><p>{{ tt('นำวัตถุดิบมาเอง เช่าเตา 100 บาท หรือกระทะหมูกระทะ 200 บาท', 'Bring your own food. Grill 100 baht, mookata pan 200 baht.') }}</p></div>
+      <div>{{ icon('board', 28) }}<strong>{{ tt('ศาลาและลานริมทะเล', 'Pavilion by the sea') }}</strong><p>{{ tt('นั่งรับลมดูพระอาทิตย์ตก มีลานทานอาหารพร้อมเต็นท์และโต๊ะยาว', 'Watch the sunset from the pavilion; long tables under the tent for group dinners.') }}</p></div>
+    </div>
+  </div>
+</section>
+
+{% if promos %}
+<section style="padding-top:0">
+  <div class="wrap">
+    <h2>{{ tt('โปรโมชั่นตอนนี้', 'Current offers') }}</h2>
+    <div class="promos">
+      {% for p in promos[:4] %}
+      <div class="promo">
+        <h3>{{ p.name(lang) }}</h3>
+        <p>{{ p.detail(lang) }}</p>
+        {% if p.end_date %}<small>{{ tt('ถึง', 'Until') }} {{ thai_date(p.end_date) }}</small>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <p style="margin-top:8px">{{ tt('ระบบคำนวณส่วนลดและของแถมให้อัตโนมัติตอนจอง', 'Discounts and gifts are applied automatically when you book.') }} <a href="{{ L }}/promotions">{{ tt('ดูเงื่อนไขทั้งหมด', 'All terms') }}</a></p>
+  </div>
+</section>
+{% endif %}
+
+{% if buyout %}
+<section class="band">
+  <div class="wrap band__grid">
+    <img width="900" height="600" class="band__img" src="/static/img/lawn-gazebo.jpg" alt="{{ tt('ลานริมทะเลจัดโต๊ะสำหรับกรุ๊ป', 'Sea-front lawn set up for a group') }}" loading="lazy">
+    <div>
+      <h2>{{ tt('มากันทั้งแก๊ง เหมาไปทั้งรีสอร์ท', 'Bring everyone and take the whole resort') }}</h2>
+      <div class="band__price">{{ money(buyout.price) }} <span style="font-size:.4em">{{ tt('บาท', 'baht') }}</span></div>
+      <div>{{ tt('ทั้ง 9 หลัง พักได้ ' ~ buyout.guests ~ ' ท่าน ต่อคืน', 'All 9 houses for ' ~ buyout.guests ~ ' guests, per night') }}</div>
+      <ul>{% for line in tt(buyout.includes_th, buyout.includes_en).splitlines() if line.strip() %}<li>{{ line }}</li>{% endfor %}</ul>
+      <a class="btn btn--light" href="{{ L }}/buyout">{{ tt('ขอใบเสนอราคาเหมารีสอร์ท', 'Ask for a group quote') }}</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section>
+  <div class="wrap">
+    <h2>{{ tt('ออกจากบ้านพักไปไม่กี่ก้าว', 'A few steps from your porch') }}</h2>
+    <p class="lede">{{ tt('รีสอร์ทอยู่ติดคาเฟ่ริมหาดที่คนมาถ่ายรูปกันมากที่สุดของนาจอมเทียน มองเห็นร่มสีชมพูได้จากบ้านหลังหน้า', 'The resort sits beside the most photographed beach cafés in Na Jomtien. You can see the pink umbrellas from the front houses.') }}</p>
+    <div class="near">
+      <figure><img width="900" height="600" src="/static/img/tutu-m.jpg" srcset="{{ ('/static/img/tutu-m.jpg')|srcset }}" sizes="(max-width: 760px) 92vw, 300px" alt="Tutu Beach" loading="lazy"><figcaption><strong>Tutu Beach</strong><span>{{ tt('คาเฟ่ร่มชมพู อยู่ติดรั้วรีสอร์ท', 'Pink-umbrella café right next door') }}</span></figcaption></figure>
+      <figure><img width="900" height="600" src="/static/img/tahiti-m.jpg" srcset="{{ ('/static/img/tahiti-m.jpg')|srcset }}" sizes="(max-width: 760px) 92vw, 300px" alt="Tahiti Beach Pattaya" loading="lazy"><figcaption><strong>Tahiti Beach Pattaya</strong><span>{{ tt('คาเฟ่ร่มฟ้า บ้านหลังใหญ่ได้คูปอง 500 บาท', 'Blue-umbrella café; big houses get a 500 baht voucher') }}</span></figcaption></figure>
+      <figure><div class="near__blank">{{ tt('คลับลุงชัช', 'Club Loong Chat') }}</div><figcaption><strong>{{ tt('คลับลุงชัช', 'Club Loong Chat') }}</strong><span>{{ tt('ไคท์เซิร์ฟ วินด์เซิร์ฟ และซัพบอร์ด ติดรีสอร์ท', 'Kitesurf, windsurf and SUP next to the resort') }}</span></figcaption></figure>
+      <figure><img width="900" height="600" src="/static/img/cave-m.jpg" srcset="{{ ('/static/img/cave-m.jpg')|srcset }}" sizes="(max-width: 760px) 92vw, 300px" alt="CAVE Beach Club" loading="lazy"><figcaption><strong>CAVE Beach Club</strong><span>{{ tt('บีชคลับยามเย็นริมหาดนาจอมเทียน', 'Evening beach club on Na Jomtien') }}</span></figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section style="background:var(--sand)" id="map">
+  <div class="wrap dir">
+    <div>
+      <h2>{{ tt('มาที่รีสอร์ท', 'Getting here') }}</h2>
+      <p class="lede">{{ tt('ขับรถจากกรุงเทพฯ ประมาณ 2 ชั่วโมง จอดรถได้ที่ลานจอดของรีสอร์ทแล้วเดินเข้าถนนทางเข้า', 'About two hours by car from Bangkok. Park in the resort car park and walk in along the resort road.') }}</p>
+      <ol>
+        <li>{{ tt('จากถนนนาจอมเทียน เข้าซอย 10 (ผ่านปั๊ม PT และ Shell)', 'From Na Jomtien Road turn into Soi 10 (past the PT and Shell stations)') }}</li>
+        <li>{{ tt('ตรงไปจนเจอซอยที่ 2 แล้วเลี้ยวขวา', 'Go straight, then turn right at the second soi') }}</li>
+        <li>{{ tt('ผ่านลานจอดรถรีสอร์ท ทางเข้ารีสอร์ทอยู่ซ้ายมือ', 'Pass the resort car park; the entrance is on your left') }}</li>
+      </ol>
+      <div class="btns">
+        <a class="btn btn--gulf" href="https://www.google.com/maps/dir/?api=1&destination={{ conf.lat }},{{ conf.lng }}" target="_blank" rel="noopener">{{ icon('pin', 20) }} {{ tt('นำทางด้วย Google Maps', 'Directions in Google Maps') }}</a>
+        <a class="btn btn--ghost" href="https://waze.com/ul?ll={{ conf.lat }},{{ conf.lng }}&navigate=yes" target="_blank" rel="noopener">Waze</a>
+      </div>
+    </div>
+    <div class="dir__map">{% include "partials/routemap.html" %}</div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.GBR = {lang: "{{ lang }}", t: {
+  free: "{{ tt('ว่าง','Free') }}", taken: "{{ tt('ไม่ว่าง','Taken') }}", nofit: "{{ tt('เกินจำนวน','Too small') }}",
+  total: "{{ tt('ราคารวม','Total') }}", nights: "{{ tt('คืน','nights') }}", freeFrom: "{{ tt('ว่างอีกครั้ง','Free again from') }}",
+  takenNote: "{{ tt('หลังนี้ไม่ว่างในช่วงที่เลือก ลองเลือกหลังอื่นในผัง หรือเปลี่ยนวัน','This house is taken on your dates. Pick another sign or change the dates.') }}",
+  nofitNote: "{{ tt('จำนวนผู้เข้าพักเกินที่บ้านหลังนี้รองรับ','Too many guests for this house') }}",
+  showing: "{{ tt('สถานะว่างของคืนวันที่','Showing') }}"
+}};
+</script>
+{% endblock %}

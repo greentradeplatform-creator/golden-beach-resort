@@ -1,0 +1,65 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ h.name_th }}{% endblock %}
+{% block heading %}บ้าน{{ h.name_th }}{% endblock %}
+{% block content %}
+<p><a href="/admin/houses">กลับไปรายการบ้าน</a> <a href="/houses/{{ h.slug }}" target="_blank" style="margin-left:14px">ดูหน้าเว็บของบ้านนี้</a></p>
+<form method="post" action="/admin/houses/{{ h.id }}" class="cols-2-1">
+  <div>
+    <div class="panel">
+      <h2>ข้อมูลบ้าน</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field"><label>ชื่อภาษาไทย</label><input name="name_th" value="{{ h.name_th }}"></div>
+        <div class="field"><label>ชื่อภาษาอังกฤษ</label><input name="name_en" value="{{ h.name_en }}"></div>
+        <div class="field"><label>ประเภท</label><select name="kind">{% for k, v in KINDS.items() %}<option value="{{ k }}" {% if h.kind==k %}selected{% endif %}>{{ v[0] }}</option>{% endfor %}</select></div>
+        <div class="field"><label>ตำแหน่งในผัง</label><div style="display:flex;gap:8px"><select name="side"><option value="L" {% if h.side=='L' %}selected{% endif %}>ฝั่งซ้าย</option><option value="R" {% if h.side=='R' %}selected{% endif %}>ฝั่งขวา</option></select><input name="position" type="number" min="1" value="{{ h.position }}" title="ลำดับจากทะเล"></div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+        <div class="field"><label>พักปกติ (ท่าน)</label><input name="std_guests" type="number" min="1" value="{{ h.std_guests }}"></div>
+        <div class="field"><label>พักสูงสุด (ท่าน)</label><input name="max_guests" type="number" min="1" value="{{ h.max_guests }}"></div>
+        <div class="field"><label>ห้องนอน</label><input name="bedrooms" type="number" min="1" value="{{ h.bedrooms }}"></div>
+        <div class="field"><label>ห้องน้ำ</label><input name="bathrooms" type="number" min="1" value="{{ h.bathrooms }}"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field"><label>การจัดเตียง (ไทย)</label><input name="beds_th" value="{{ h.beds_th }}"></div>
+        <div class="field"><label>การจัดเตียง (อังกฤษ)</label><input name="beds_en" value="{{ h.beds_en }}"></div>
+      </div>
+      <div class="field"><label>คำอธิบาย (ไทย)</label><textarea name="description_th">{{ h.description_th }}</textarea></div>
+      <div class="field"><label>คำอธิบาย (อังกฤษ)</label><textarea name="description_en">{{ h.description_en }}</textarea></div>
+      <div class="field"><label>สิ่งอำนวยความสะดวก</label>
+        <div class="chk-row">{% for k, v in AMENITIES.items() %}<label><input type="checkbox" name="amenities" value="{{ k }}" {% if k in h.amenities.split(',') %}checked{% endif %}> {{ v[0] }}</label>{% endfor %}</div></div>
+    </div>
+  </div>
+  <div>
+    <div class="panel">
+      <h2>ราคา</h2>
+      <div class="field"><label>ราคาคืนอาทิตย์–พฤหัส</label><input name="price_weekday" inputmode="decimal" value="{{ '%.0f'|format(h.price_weekday|float) }}"></div>
+      <div class="field"><label>ราคาคืนศุกร์–เสาร์</label><input name="price_weekend" inputmode="decimal" value="{{ '%.0f'|format(h.price_weekend|float) }}"></div>
+      <div class="field"><label>ค่าผู้เข้าพักเกินจำนวนปกติ (ต่อคน/คืน)</label><input name="extra_guest_fee" inputmode="decimal" value="{{ '%.0f'|format(h.extra_guest_fee|float) }}"></div>
+      <label class="check"><input type="checkbox" name="is_active" value="1" {% if h.is_active %}checked{% endif %}> เปิดขายบนเว็บไซต์</label>
+    </div>
+    <div class="panel">
+      <h2>ปฏิทิน Airbnb (iCal)</h2>
+      <div class="field"><label>ลิงก์ iCal จาก Airbnb เพื่อดึงวันที่ถูกจองมาบล็อก</label><input name="ical_import_url" value="{{ h.ical_import_url }}" placeholder="https://www.airbnb.com/calendar/ical/....ics"></div>
+      <label>ลิงก์ส่งออก (นำไปใส่ใน Airbnb)</label>
+      <input readonly value="{{ base }}/ical/{{ h.slug }}.ics?token={{ h.ical_token }}" onclick="this.select()">
+      <p class="small muted" style="margin-top:6px">ระบบดึงปฏิทินอัตโนมัติทุก 2 ชั่วโมง</p>
+    </div>
+    <button class="btn btn--block">บันทึกข้อมูลบ้าน</button>
+  </div>
+</form>
+{% if h.ical_import_url %}<form method="post" action="/admin/houses/{{ h.id }}/ical" style="margin-top:-6px"><button class="btn btn--ghost btn--sm">ดึงปฏิทิน Airbnb ตอนนี้</button></form>{% endif %}
+
+<div class="panel" id="photos" style="margin-top:20px">
+  <div class="panel__head"><h2>รูปภาพ</h2><span class="small muted">รูปแรกคือรูปปก</span></div>
+  <div class="photos">
+    {% for p in h.photos %}
+    <figure><img src="{{ p.path|replace('.jpg','-m.jpg') if p.path.startswith('/static') else p.path }}" alt="">
+      <figcaption>{% if not loop.first %}<form method="post" action="/admin/photos/{{ p.id }}/cover"><button class="btn btn--ghost btn--sm">ตั้งเป็นปก</button></form>{% else %}<span class="st st--completed">ปก</span>{% endif %}
+        <form method="post" action="/admin/photos/{{ p.id }}/delete" data-confirm="ลบรูปนี้?"><button class="btn btn--ghost btn--sm">ลบ</button></form></figcaption></figure>
+    {% endfor %}
+  </div>
+  <form method="post" action="/admin/houses/{{ h.id }}/photos" enctype="multipart/form-data" style="display:flex;gap:10px;margin-top:16px;align-items:center;flex-wrap:wrap">
+    <input type="file" name="photo" accept="image/*" required style="max-width:340px"><button class="btn btn--ghost">อัปโหลดรูป</button>
+  </form>
+</div>
+{% endblock %}

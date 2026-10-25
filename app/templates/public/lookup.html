@@ -1,0 +1,15 @@
+{% extends "public/base.html" %}
+{% block title %}{{ tt('ตรวจสอบการจอง', 'Find my booking') }} | {{ tt(conf.resort_name_th, conf.resort_name_en) }}{% endblock %}
+{% block robots %}noindex, follow{% endblock %}
+{% block main %}
+<div class="wrap" style="max-width:560px;padding:64px var(--gutter) 100px">
+  <h1 style="font-size:clamp(30px,4vw,42px)">{{ tt('ตรวจสอบการจอง', 'Find my booking') }}</h1>
+  <p class="lede">{{ tt('ดูสถานะ ชำระเงิน และแนบสลิป ด้วยเลขจองกับเบอร์โทรที่ใช้ตอนจอง', 'Check the status, pay and upload your slip with your booking code and phone number.') }}</p>
+  {% if error %}<div class="alert alert--error" role="alert">{{ error }}</div>{% endif %}
+  <form method="post" action="{{ L }}/booking">
+    <div class="field"><label for="l-c">{{ tt('เลขที่การจอง', 'Booking code') }}</label><input id="l-c" name="code" placeholder="GB2610-0001" autocapitalize="characters" required></div>
+    <div class="field"><label for="l-p">{{ tt('เบอร์โทร', 'Phone') }}</label><input id="l-p" name="phone" type="tel" inputmode="tel" required></div>
+    <button class="btn btn--block" type="submit">{{ tt('ดูการจอง', 'Show booking') }}</button>
+  </form>
+</div>
+{% endblock %}

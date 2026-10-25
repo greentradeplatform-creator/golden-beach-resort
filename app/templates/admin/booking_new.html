@@ -1,0 +1,61 @@
+{% extends "admin/base.html" %}
+{% block title %}สร้างการจอง{% endblock %}
+{% block heading %}สร้างการจอง{% endblock %}
+{% block content %}
+<form method="post" action="/admin/bookings/new" data-newbooking class="cols-2-1">
+  <div>
+    {% if error %}<div class="conflict"><strong>{{ error }}</strong></div>{% endif %}
+    <div class="panel">
+      <h2>ลูกค้ามาจากช่องทางไหน</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field"><label>ช่องทางการจอง (บังคับ)</label>
+          <select name="channel" required><option value="">เลือกช่องทาง</option>{% for c in channels %}<option value="{{ c }}" {% if f.channel == c %}selected{% endif %}>{{ CHANNELS[c][0] }}</option>{% endfor %}</select></div>
+        <div class="field" data-agent-row><label>ผู้ปิดการขาย</label>
+          {% if user.role == 'sales' %}<input value="{{ user.display_name }}" disabled><input type="hidden" name="agent_id" value="{{ user.id }}">
+          {% else %}<select name="agent_id"><option value="">ไม่ระบุ</option>{% for a in agents %}<option value="{{ a.id }}" {% if f.agent_id == a.id %}selected{% endif %}>{{ a.display_name }}</option>{% endfor %}</select>{% endif %}</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>บ้านและวันที่</h2>
+      {% if pkg %}<label class="check" style="margin-bottom:14px"><input type="checkbox" name="buyout" value="1" {% if f.buyout %}checked{% endif %}> <span>เหมาทั้งรีสอร์ท (ทุกหลัง) แพ็กเกจ {{ money(pkg.price) }} บาท/คืน</span></label>{% endif %}
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px">
+        <div class="field" data-single><label>บ้าน</label><select name="house_id"><option value="">เลือกบ้าน</option>{% for h in houses %}<option value="{{ h.id }}" {% if f.house_id == h.id %}selected{% endif %}>{{ h.name_th }} ({{ KINDS[h.kind][0] }} {{ h.max_guests }} ท่าน)</option>{% endfor %}</select></div>
+        <div class="field"><label>เช็คอิน</label><input type="date" name="check_in" value="{{ f.check_in }}" required></div>
+        <div class="field"><label>เช็คเอาท์</label><input type="date" name="check_out" value="{{ f.check_out }}" required></div>
+      </div>
+      <div data-check aria-live="polite"></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px" data-single>
+        <div class="field"><label>ผู้ใหญ่</label><input type="number" name="adults" min="1" max="10" value="{{ f.adults or 2 }}"></div>
+        <div class="field"><label>เด็ก</label><input type="number" name="children" min="0" max="10" value="{{ f.children or 0 }}"></div>
+        <div class="field"><label>สัตว์เลี้ยง</label><input type="number" name="pets" min="0" max="5" value="{{ f.pets or 0 }}"></div>
+      </div>
+      {% if addons %}<div data-single>{% for a in addons %}<div class="addon"><span>{{ a.name_th }} <span class="muted">{{ money(a.price) }}</span></span><select name="addon_{{ a.id }}">{% for n in range(0,4) %}<option>{{ n }}</option>{% endfor %}</select></div>{% endfor %}</div>{% endif %}
+    </div>
+
+    <div class="panel">
+      <h2>ลูกค้า</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field"><label>ชื่อลูกค้า</label><input name="name" value="{{ f.name or '' }}" required></div>
+        <div class="field"><label>เบอร์โทร</label><input name="phone" type="tel" value="{{ f.phone or '' }}" required></div>
+        <div class="field"><label>อีเมล</label><input name="email" type="email" value="{{ f.email or '' }}"></div>
+        <div class="field"><label>LINE ID</label><input name="line_id" value="{{ f.line_id or '' }}"></div>
+      </div>
+      <div class="field"><label>คำขอพิเศษของลูกค้า</label><textarea name="special_request" style="min-height:70px">{{ f.special_request or '' }}</textarea></div>
+      <div class="field"><label>หมายเหตุภายใน (ลูกค้าไม่เห็น)</label><textarea name="admin_note" style="min-height:70px">{{ f.admin_note or '' }}</textarea></div>
+    </div>
+  </div>
+
+  <div class="panel" style="position:sticky;top:84px">
+    <h2>สถานะเมื่อบันทึก</h2>
+    <div class="field">
+      <label class="check"><input type="radio" name="status" value="awaiting_payment" {% if (f.status or 'awaiting_payment') == 'awaiting_payment' %}checked{% endif %}> <span>กันห้องไว้ รอลูกค้าโอน ({{ conf.hold_hours }} ชม.)</span></label>
+      <label class="check"><input type="radio" name="status" value="confirmed" {% if f.status == 'confirmed' %}checked{% endif %}> <span>ลูกค้าโอนเต็มจำนวนแล้ว ยืนยันทันที</span></label>
+      <label class="check"><input type="radio" name="status" value="pending" {% if f.status == 'pending' %}checked{% endif %}> <span>บันทึกเป็นคำขอ ยังไม่กันห้อง</span></label>
+    </div>
+    <div class="field"><label>ราคาที่ตกลงกับลูกค้า (เว้นว่างเพื่อใช้ราคาระบบ)</label><input name="override_total" inputmode="decimal" value="{{ f.override_total or '' }}" placeholder="เช่น 5500"></div>
+    <button class="btn btn--block" type="submit">บันทึกการจอง</button>
+    <p class="small muted" style="margin-top:10px">ระบบตรวจซ้ำก่อนบันทึกเสมอ ถ้ามีคนจองตัดหน้าในจังหวะเดียวกัน ระบบจะไม่ยอมบันทึกและแจ้งเตือน</p>
+  </div>
+</form>
+{% endblock %}

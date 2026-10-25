@@ -1,0 +1,129 @@
+{% extends "public/base.html" %}
+{% block title %}{{ tt('การจอง', 'Booking') }} {{ b.code }} | {{ tt(conf.resort_name_th, conf.resort_name_en) }}{% endblock %}
+{% block head %}{% endblock %}
+{% block robots %}noindex, follow{% endblock %}
+{% block main %}
+{% set order = ['pending', 'awaiting_payment', 'slip_uploaded', 'confirmed', 'checked_in', 'completed'] %}
+{% set pos = order.index(b.status) if b.status in order else -1 %}
+<div class="wrap" style="padding:40px var(--gutter) 90px;max-width:900px">
+  {% if new %}
+  <div class="alert alert--ok" role="status">
+    {% if b.status == 'pending' %}<strong>{{ tt('ส่งคำขอจองแล้ว', 'Request sent') }}</strong> {{ tt('แอดมินกำลังตรวจสอบห้องว่าง จะแจ้งยอดชำระทางโทรศัพท์หรืออีเมลโดยเร็ว เก็บเลขจองนี้ไว้เพื่อกลับมาดูสถานะ', 'We are checking the house and will send the amount to pay shortly. Keep this booking code to check back.') }}
+    {% else %}<strong>{{ tt('จองบ้านไว้ให้แล้ว', 'House held for you') }}</strong> {{ tt('กรุณาชำระเงินภายในเวลาที่กำหนดด้านล่าง', 'Please pay before the time shown below.') }}{% endif %}
+  </div>
+  {% endif %}
+  {% if error %}<div class="alert alert--error" role="alert">{{ error }}</div>{% endif %}
+
+  <div class="status-head">
+    <div><div class="muted small">{{ tt('เลขที่การจอง', 'Booking code') }}</div><div class="code">{{ b.code }}</div></div>
+    <div style="text-align:right"><div class="muted small">{{ tt('สถานะ', 'Status') }}</div><strong style="font-size:19px">{{ status_label(b.status) }}</strong></div>
+  </div>
+
+  {% if pos >= 0 %}
+  <ol class="track">
+    {% set steps = [(0, tt('ส่งคำขอ','Requested')), (1, tt('ยืนยันห้องว่าง','House confirmed')), (3, tt('ชำระเงินแล้ว','Paid')), (5, tt('เข้าพัก','Stayed'))] %}
+    {% for i, label in steps %}<li class="{% if pos > i or (i == 3 and pos >= 3) or (i==5 and pos==5) %}is-done{% elif pos == i or (i == 1 and pos == 2) or (i == 5 and pos == 4) %}is-now{% endif %}">{{ label }}</li>{% endfor %}
+  </ol>
+  {% else %}
+  <div class="alert alert--error" style="margin-top:20px">{{ status_label(b.status) }}{% if b.cancel_reason %}: {{ b.cancel_reason }}{% endif %}. {{ tt('สอบถามได้ที่', 'Call us on') }} <a href="tel:{{ conf.phone_main|replace('-','') }}">{{ conf.phone_main }}</a></div>
+  {% endif %}
+
+  <h2 style="font-size:26px;margin-top:10px">{{ tt('บ้าน', '') }}{{ b.house.name(lang) }}</h2>
+  <dl class="kv">
+    <dt>{{ tt('เช็คอิน', 'Check-in') }}</dt><dd>{{ thai_date(b.check_in, short=False) }} {{ tt('เวลา', 'from') }} {{ conf.checkin_time }}</dd>
+    <dt>{{ tt('เช็คเอาท์', 'Check-out') }}</dt><dd>{{ thai_date(b.check_out, short=False) }} {{ tt('ก่อน', 'by') }} {{ conf.checkout_time }}</dd>
+    <dt>{{ tt('ผู้เข้าพัก', 'Guests') }}</dt><dd>{{ tt('ผู้ใหญ่', 'Adults') }} {{ b.adults }}{% if b.children %}, {{ tt('เด็ก', 'children') }} {{ b.children }}{% endif %}{% if b.pets %}, {{ tt('สัตว์เลี้ยง', 'pets') }} {{ b.pets }}{% endif %}</dd>
+    <dt>{{ tt('ผู้จอง', 'Name') }}</dt><dd>{{ b.customer.name }} ({{ fmt_phone(b.customer.phone) }})</dd>
+  </dl>
+
+  <div class="quote" style="max-width:520px;margin-top:22px">
+    <div class="quote__line"><span>{{ tt('ค่าบ้านพัก', 'House') }} {{ b.nights }} {{ tt('คืน', 'nights') }}</span><span>{{ money(b.room_total) }}</span></div>
+    {% if b.extra_guest_total|float %}<div class="quote__line"><span>{{ tt('ผู้เข้าพักเพิ่ม', 'Extra guests') }}</span><span>{{ money(b.extra_guest_total) }}</span></div>{% endif %}
+    {% for a in b.addons %}<div class="quote__line"><span>{{ a.name }} × {{ a.qty }}</span><span>{{ money(a.amount) }}</span></div>{% endfor %}
+    {% for d in bd.discounts or [] %}<div class="quote__line quote__line--disc"><span>{{ d.name }}</span><span>−{{ money(d.amount) }}</span></div>{% endfor %}
+    {% if not bd.discounts and b.discount_total|float %}<div class="quote__line quote__line--disc"><span>{{ tt('ส่วนลด', 'Discount') }}</span><span>−{{ money(b.discount_total) }}</span></div>{% endif %}
+    <div class="quote__line quote__line--total"><span>{{ tt('ยอดรวม', 'Total') }}</span><span>{{ money(b.total) }} {{ tt('บาท', 'baht') }}</span></div>
+    {% if b.amount_paid|float %}<div class="quote__line"><span>{{ tt('ชำระแล้ว', 'Paid') }}</span><span>{{ money(b.amount_paid) }}</span></div>{% endif %}
+    {% for g in bd.gifts or [] %}<div class="quote__gift">{{ tt('ของแถม:', 'Gift:') }} {{ g }}</div>{% endfor %}
+  </div>
+
+  {% if b.status in ('awaiting_payment', 'slip_uploaded') or (b.status == 'confirmed' and due > 0) %}
+  <h2 id="pay" style="font-size:26px;margin-top:44px">{{ tt('ชำระเงิน', 'Payment') }}</h2>
+  {% if online and b.status in ('awaiting_payment', 'slip_uploaded') and due >= 20 %}
+  {% set waiting = charge and charge.status == 'pending' and charge.qr_url %}
+  <div class="onpay" id="onpay" {% if waiting or (charge and charge.status == 'pending') %}data-poll="{{ L }}/booking/{{ b.code }}/pay/status"{% endif %}>
+    <div class="onpay__head"><b>{{ tt('ชำระออนไลน์ ยืนยันการจองทันที', 'Pay online, confirmed instantly') }}</b>
+      <span class="small muted">{{ tt('ไม่ต้องแนบสลิป', 'No slip needed') }}</span></div>
+    {% if waiting %}
+      <div class="onpay__qrbox">
+        <img src="{{ L }}/booking/{{ b.code }}/pay/qr" alt="PromptPay QR {{ money(charge.amount) }}" width="240" height="240" class="onpay__qr">
+        <div>
+          <div class="price" style="font-size:28px">{{ money(charge.amount) }} {{ tt('บาท', 'baht') }}</div>
+          <p class="small">{{ tt('สแกน QR ด้วยแอปธนาคารใดก็ได้ จ่ายเสร็จแล้วหน้านี้จะยืนยันการจองให้เองภายในไม่กี่วินาที', 'Scan with any Thai banking app. This page confirms your booking by itself a few seconds after you pay.') }}</p>
+          <p class="onpay__wait" aria-live="polite">{{ tt('กำลังรอการชำระเงิน…', 'Waiting for your payment…') }}</p>
+        </div>
+      </div>
+    {% else %}
+      {% if charge and charge.status == 'pending' %}<p class="onpay__wait" aria-live="polite">{{ tt('กำลังตรวจสอบการชำระเงิน…', 'Checking your payment…') }}</p>{% endif %}
+      {% if charge and charge.status in ('failed', 'expired') %}<div class="alert alert--error">{{ tt('รายการก่อนหน้าไม่สำเร็จ', 'The last attempt did not go through') }}{% if charge.failure %}: {{ charge.failure }}{% endif %}. {{ tt('ลองใหม่ได้เลย', 'Please try again.') }}</div>{% endif %}
+      <div class="onpay__btns">
+        {% if online.promptpay %}
+        <form method="post" action="{{ L }}/booking/{{ b.code }}/pay/opn"><input type="hidden" name="method" value="promptpay">
+          <button class="btn" type="submit">{{ tt('พร้อมเพย์ QR', 'PromptPay QR') }}</button></form>{% endif %}
+        {% if online.cards or online.other %}
+        <form method="post" action="{{ L }}/booking/{{ b.code }}/pay/opn" id="opn-form">
+          <input type="hidden" name="omiseToken"><input type="hidden" name="omiseSource">
+          <button class="btn btn--ghost" type="button" id="opn-open" data-key="{{ online.public_key }}" data-amount="{{ (due * 100)|round|int }}"
+            data-default="{{ 'credit_card' if online.cards else online.other[0] }}"
+            data-other="{{ (online.other if online.cards else online.other[1:])|join(',') }}"
+            data-label="{{ conf.resort_name_en }}" data-submit="{{ tt('ชำระ', 'Pay') }} {{ money(due) }} THB">
+            {{ tt('บัตรเครดิต / Mobile Banking', 'Card / mobile banking') if online.cards else tt('Mobile Banking', 'Mobile banking') }}</button>
+        </form>{% endif %}
+      </div>
+    {% endif %}
+  </div>
+  <p class="onpay__or small muted">{{ tt('หรือโอนเข้าบัญชีแล้วแนบสลิปตามด้านล่าง', 'Or transfer to our account and upload the slip below') }}</p>
+  {% if online.cards or online.other %}<script src="https://cdn.omise.co/omise.js" defer></script>{% endif %}
+  {% endif %}
+  <div class="pay">
+    <div class="pay__qr">
+      {% if qr %}{{ qr|safe }}<div>{{ tt('สแกนด้วยแอปธนาคาร ยอด', 'Scan with any Thai bank app,') }} {{ money(due) }} {{ tt('บาท', 'baht') }}{% if online %} {{ tt('แล้วแนบสลิป', 'then upload the slip') }}{% endif %}</div>
+      {% else %}<div style="aspect-ratio:1;display:grid;place-items:center;background:var(--sand);border-radius:8px;padding:16px">{{ tt('โอนเข้าบัญชีด้านขวา', 'Transfer to the account shown') }}</div>{% endif %}
+    </div>
+    <div>
+      <div class="muted small">{{ tt('ยอดที่ต้องชำระ', 'Amount due') }}</div>
+      <div class="price" style="font-size:34px;line-height:1.2">{{ money(due) }} {{ tt('บาท', 'baht') }}</div>
+      {% if b.hold_until and b.status == 'awaiting_payment' %}<p class="small" style="color:var(--taken);margin:4px 0 0">{{ tt('กรุณาชำระภายใน', 'Please pay by') }} {{ thai_date(b.hold_until) }} {{ b.hold_until.strftime('%H:%M') }} {{ tt('น. หลังจากนั้นระบบจะปล่อยบ้านให้ผู้อื่นจอง', '; after that the house is released.') }}</p>{% endif %}
+      <div class="acct">
+        <div class="small">{{ conf.bank_name }}</div>
+        <b>{{ conf.bank_account_no }}</b> <button type="button" class="btn btn--ghost" style="min-height:34px;padding:0 10px;font-size:13px" data-copy="{{ conf.bank_account_no|replace('-','') }}" data-done="{{ tt('คัดลอกแล้ว', 'Copied') }}">{{ tt('คัดลอก', 'Copy') }}</button>
+        <div class="small">{{ conf.bank_account_name }}</div>
+      </div>
+      <p class="small" style="color:var(--taken)">{{ tt('โอนเข้าบัญชีนี้เท่านั้น รีสอร์ทไม่มีนโยบายให้โอนเข้าบัญชีส่วนตัว', 'Pay only into this company account. We never ask for transfers to personal accounts.') }}</p>
+      {% if b.status == 'slip_uploaded' %}<div class="alert alert--ok">{{ tt('ได้รับสลิปแล้ว กำลังตรวจสอบยอด หากต้องการแนบเพิ่มทำได้ด้านล่าง', 'We have your slip and are checking it. You can attach another below.') }}</div>{% endif %}
+      <form method="post" action="{{ L }}/booking/{{ b.code }}/slip" enctype="multipart/form-data">
+        <div class="grid2">
+          <div class="field"><label for="s-a">{{ tt('ยอดที่โอน (บาท)', 'Amount transferred') }}</label><input id="s-a" name="amount" inputmode="decimal" value="{{ money(due)|replace(',','') }}"></div>
+          <div class="field"><label for="s-f">{{ tt('สลิปการโอน', 'Transfer slip') }}</label><input id="s-f" type="file" name="slip" accept="image/*" required></div>
+        </div>
+        <button class="btn" type="submit">{{ tt('แนบสลิป', 'Upload slip') }}</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if loyalty %}
+  <h2 style="font-size:24px;margin-top:44px">{{ loyalty.promo.name(lang) }}</h2>
+  <p class="small muted">{{ loyalty.promo.detail(lang) }}</p>
+  <div class="stamps">
+    {% for i in range(1, loyalty.nth + 1) %}
+      {% set filled = (loyalty.done % loyalty.nth) >= i %}
+      <span class="{% if i == loyalty.nth %}is-prize{% elif filled %}is-on{% endif %}">{% if i == loyalty.nth %}50%{% else %}{{ i }}{% endif %}</span>
+    {% endfor %}
+  </div>
+  <p class="small" style="margin-top:8px">{{ tt('เข้าพักแล้ว', 'Completed stays:') }} {{ loyalty.done }} {{ tt('ครั้ง', '') }}</p>
+  {% endif %}
+
+  <p style="margin-top:44px"><a href="tel:{{ conf.phone_main|replace('-','') }}">{{ tt('ต้องการเปลี่ยนวันหรือยกเลิก โทร', 'To change or cancel, call') }} {{ conf.phone_main }}</a></p>
+</div>
+{% endblock %}

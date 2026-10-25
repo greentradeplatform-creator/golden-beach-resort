@@ -1,0 +1,16 @@
+{% extends "admin/base.html" %}
+{% block title %}ข้อความสอบถาม{% endblock %}
+{% block heading %}ข้อความสอบถาม{% endblock %}
+{% block content %}
+<div class="panel panel--flush"><div class="t-wrap"><table class="t">
+  <thead><tr><th>วันที่</th><th>ประเภท</th><th>ผู้ติดต่อ</th><th>วันที่ต้องการ</th><th>ข้อความ</th><th></th></tr></thead>
+  <tbody>{% for i in rows %}
+    <tr {% if i.status == 'done' %}style="opacity:.55"{% endif %}><td class="nowrap">{{ thai_date(i.created_at) }}<br><span class="small muted">{{ i.created_at.strftime('%H:%M') }}</span></td>
+      <td>{{ {'buyout':'เหมารีสอร์ท','event':'จัดงาน','contact':'สอบถาม'}.get(i.kind, i.kind) }}</td>
+      <td><b>{{ i.name }}</b><br><a href="tel:{{ i.phone }}">{{ fmt_phone(i.phone) }}</a> <span class="small">{{ i.email }}</span></td>
+      <td class="small">{% if i.date_from %}{{ thai_date(i.date_from) }} {{ i.nights }} คืน{% endif %}{% if i.guests %}<br>{{ i.guests }} คน{% endif %}</td>
+      <td style="max-width:420px">{{ i.message }}</td>
+      <td>{% if i.status == 'new' %}<form method="post" action="/admin/inquiries/{{ i.id }}/done"><button class="btn btn--ghost btn--sm">ติดต่อแล้ว</button></form>{% if i.kind == 'buyout' and i.date_from %}<a class="small" href="/admin/bookings/new?ci={{ i.date_from }}">สร้างการจอง</a>{% endif %}{% else %}<span class="small muted">เรียบร้อย</span>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="6" class="empty" style="padding:20px">ยังไม่มีข้อความ</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

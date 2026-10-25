@@ -1,0 +1,41 @@
+{% extends "public/base.html" %}
+{% block title %}{{ tt('บ้านพักทั้ง 9 หลัง ราคาและการจัดเตียง', 'All nine houses, prices and beds') }} | {{ tt(conf.resort_name_th, conf.resort_name_en) }}{% endblock %}
+{% block desc %}{{ tt('บ้านพักไม้สักทั้ง 9 หลังของโกลเด้น บีช รีสอร์ท ราคา การจัดเตียง จำนวนผู้เข้าพัก บ้านหลังใหญ่ติดทะเล บ้านหลังเล็กสำหรับคู่รัก', 'All nine teak houses at Golden Beach Resort with prices, beds and capacity: sea-front big houses and small houses for couples.') }}{% endblock %}
+{% block main %}
+<div class="page-top">
+  <div class="wrap">
+    <h1>{{ tt('บ้านพักทั้ง 9 หลัง', 'All nine houses') }}</h1>
+    <p>{{ tt('ราคาต่อหลังต่อคืน รวมอาหารเช้าตามจำนวนผู้เข้าพัก ศัพท์ของรีสอร์ท: "เตียงเดี่ยว" คือเตียงใหญ่ 5 ฟุตนอนได้ 2 คน ส่วน "เตียงคู่" คือเตียง 3.5 ฟุตสองเตียงแยกกัน', 'Prices are per house per night with breakfast. Note: our "single bed" room means one 5 ft bed for two; "twin" means two separate 3.5 ft beds.') }}</p>
+  </div>
+</div>
+<div class="wrap" style="padding-bottom:80px">
+  {% for kind in ['big_front', 'big', 'small'] %}
+  {% set hs = houses|selectattr('kind','equalto',kind)|list %}
+  {% if hs %}
+  <div class="group-title"><h2>{{ tt(KINDS[kind][0], KINDS[kind][1]) }}</h2><span class="muted">{{ hs|length }} {{ tt('หลัง', 'houses') }}</span></div>
+  <div class="hlist">
+    {% for h in hs %}
+    <article class="hrow">
+      <a href="{{ L }}/houses/{{ h.slug }}"><img width="900" height="600" src="{{ h.cover|replace('.jpg','-m.jpg') if h.cover.startswith('/static') else h.cover }}" srcset="{{ (h.cover|replace('.jpg','-m.jpg') if h.cover.startswith('/static') else h.cover)|srcset }}" sizes="(max-width: 900px) 92vw, 360px" alt="{{ h.name(lang) }}" loading="lazy"></a>
+      <div>
+        <div class="hrow__kind">{{ tt('ฝั่งซ้าย' if h.side == 'L' else 'ฝั่งขวา', 'Left side' if h.side == 'L' else 'Right side') }} {{ tt('หลังที่ ' ~ h.position ~ ' จากทะเล', 'house ' ~ h.position ~ ' from the sea') }}</div>
+        <h2><a href="{{ L }}/houses/{{ h.slug }}">{{ h.name(lang) }}</a></h2>
+        <p style="margin:6px 0 0;color:var(--ink-2)">{{ tt(h.description_th, h.description_en) }}</p>
+        <ul class="hrow__specs">
+          <li>{{ icon('people', 18) }} {{ h.max_guests }} {{ tt('ท่าน', 'guests') }}</li>
+          <li>{{ icon('bed', 18) }} {{ tt(h.beds_th, h.beds_en) }}</li>
+          <li>{{ h.bedrooms }} {{ tt('ห้องนอน', 'bedroom' if h.bedrooms == 1 else 'bedrooms') }} {{ h.bathrooms }} {{ tt('ห้องน้ำ', 'bath') }}</li>
+        </ul>
+      </div>
+      <div class="hrow__side">
+        <div><span class="price">{{ money(h.price_weekday) }}</span> <span class="muted small">{{ tt('บาท/คืน', 'baht/night') }}</span>
+          {% if h.price_weekend != h.price_weekday %}<div class="small muted">{{ tt('ศุกร์–เสาร์', 'Fri–Sat') }} {{ money(h.price_weekend) }}</div>{% endif %}</div>
+        <a class="btn" href="{{ L }}/book?house={{ h.slug }}">{{ tt('จองหลังนี้', 'Book') }}</a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endfor %}
+</div>
+{% endblock %}

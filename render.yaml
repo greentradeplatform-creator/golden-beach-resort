@@ -1,0 +1,25 @@
+# Render Blueprint: free web service. Database = Supabase (free, does not expire).
+services:
+  - type: web
+    name: golden-beach-resort
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: SECRET_KEY
+        generateValue: true
+      - key: CRON_TOKEN
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: "1"
+      - key: DATABASE_URL        # Supabase > Connect > Session pooler URI
+        sync: false
+      - key: PUBLIC_BASE_URL     # e.g. https://golden-beach-resort.onrender.com or your domain
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false

@@ -1,0 +1,84 @@
+{% extends "admin/base.html" %}
+{% block title %}ภาพรวม{% endblock %}
+{% block heading %}วันนี้ {{ thai_date(today, short=False) }}{% endblock %}
+{% block content %}
+<dl class="figs">
+  <div><dt>เข้าพักวันนี้</dt><dd>{{ arrivals|length }}</dd></div>
+  <div><dt>ออกวันนี้</dt><dd>{{ departures|length }}</dd></div>
+  <div><dt>กำลังเข้าพัก</dt><dd>{{ inhouse }}</dd></div>
+  <div><dt><a href="/admin/bookings?status=pending">ต้องจัดการ</a></dt><dd><a href="/admin/bookings?status=active">{{ todo|length }}</a></dd></div>
+  <div><dt>รายได้เดือนนี้ (ชำระแล้ว)</dt><dd>{{ money(month_rev) }}</dd></div>
+  <div><dt>อัตราเข้าพักเดือนนี้</dt><dd>{{ '%.0f'|format(occ) }}%</dd></div>
+  {% if my_balance is not none %}<div><dt><a href="/admin/wallet">ค่าคอมของฉัน (ค้างรับ)</a></dt><dd>{{ money(my_balance) }}</dd></div>{% endif %}
+</dl>
+
+<div class="panel checklist" id="todo">
+  <div class="panel__head"><h2>เช็กลิสต์วันนี้ {% if checklist %}<span class="badge badge--soft">{{ checklist|length }}</span>{% endif %}</h2>
+    <div class="row-actions">
+      <a class="btn btn--sm btn--ghost" href="/admin/quick">เช็คว่าง / ตอบแชท</a>
+      {% if user.role in ('owner','manager') %}
+      <form method="post" action="/admin/automation/run"><input type="hidden" name="what" value="summary"><button class="btn btn--sm btn--ghost" title="ส่งสรุปงานวันนี้เข้ากลุ่ม LINE">ส่งสรุปเข้า LINE</button></form>
+      <form method="post" action="/admin/automation/run"><button class="btn btn--sm btn--ghost" title="ปกติระบบทำเองทุก 5 นาที">รันระบบอัตโนมัติ</button></form>
+      {% endif %}
+    </div>
+  </div>
+  {% if checklist %}
+  <ul class="todo">{% for i in checklist %}
+    <li class="todo__i todo__i--{{ i.level }}"><a href="{{ i.link }}">{{ i.text }}</a>{% if i.hint %}<span class="muted small">{{ i.hint }}</span>{% endif %}</li>
+  {% endfor %}</ul>
+  {% else %}<p class="empty">ไม่มีงานค้าง ทุกอย่างเรียบร้อย</p>{% endif %}
+</div>
+
+<div class="cols-2-1">
+  <div>
+    <div class="panel panel--flush">
+      <div class="panel__head" style="padding:16px 20px 0"><h2>ต้องจัดการ</h2><a class="btn btn--sm" href="/admin/bookings/new">สร้างการจอง</a></div>
+      {% if todo %}
+      <div class="t-wrap"><table class="t">
+        <thead><tr><th>เลขจอง</th><th>บ้าน</th><th>วันที่</th><th>ลูกค้า</th><th>ช่องทาง</th><th>สถานะ</th><th class="num">ยอด</th></tr></thead>
+        <tbody>{% for b in todo %}
+          <tr class="is-link" data-href="/admin/bookings/{{ b.id }}"><td><a href="/admin/bookings/{{ b.id }}">{{ b.code }}</a></td><td>{{ b.house.name_th }}</td>
+            <td class="nowrap">{{ thai_date(b.check_in, year=False) }} – {{ thai_date(b.check_out, year=False) }}</td><td>{{ b.customer.name }}</td>
+            <td class="ch">{{ CHANNELS[b.channel][0] }}</td><td><span class="st st--{{ b.status }}">{{ STATUS_TH[b.status] }}</span></td><td class="num">{{ money(b.total) }}</td></tr>
+        {% endfor %}</tbody></table></div>
+      {% else %}<p class="empty" style="padding:0 20px 18px">ไม่มีคำขอค้าง เยี่ยมมาก</p>{% endif %}
+    </div>
+
+    {% if holds %}
+    <div class="panel panel--flush">
+      <div class="panel__head" style="padding:16px 20px 0"><h2>กันห้องไว้ รอลูกค้าชำระ</h2></div>
+      <div class="t-wrap"><table class="t"><thead><tr><th>เลขจอง</th><th>บ้าน</th><th>ลูกค้า</th><th>ต้องชำระภายใน</th><th class="num">ยอด</th></tr></thead><tbody>
+        {% for b in holds %}<tr class="is-link" data-href="/admin/bookings/{{ b.id }}"><td>{{ b.code }}</td><td>{{ b.house.name_th }}</td><td>{{ b.customer.name }} <span class="muted">{{ fmt_phone(b.customer.phone) }}</span></td>
+          <td class="nowrap">{% if b.hold_until %}{{ thai_date(b.hold_until, year=False) }} {{ b.hold_until.strftime('%H:%M') }}{% else %}-{% endif %}</td><td class="num">{{ money(b.deposit_due) }}</td></tr>{% endfor %}
+      </tbody></table></div>
+    </div>
+    {% endif %}
+
+    <div class="cols">
+      <div class="panel"><h2>เข้าพักวันนี้</h2>
+        {% for b in arrivals %}<p style="margin:0 0 8px"><a href="/admin/bookings/{{ b.id }}"><b>{{ b.house.name_th }}</b></a> {{ b.customer.name }} {{ b.adults + b.children }} ท่าน<br><span class="st st--{{ b.status }}">{{ STATUS_TH[b.status] }}</span> <span class="muted small">{{ fmt_phone(b.customer.phone) }}</span></p>{% else %}<p class="empty">ไม่มี</p>{% endfor %}
+      </div>
+      <div class="panel"><h2>ออกวันนี้</h2>
+        {% for b in departures %}<p style="margin:0 0 8px"><a href="/admin/bookings/{{ b.id }}"><b>{{ b.house.name_th }}</b></a> {{ b.customer.name }}<br><span class="st st--{{ b.status }}">{{ STATUS_TH[b.status] }}</span></p>{% else %}<p class="empty">ไม่มี</p>{% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>คืนนี้</h2>
+    <p class="small muted">แดง = มีผู้เข้าพัก, เทา = ปิดห้อง, เขียว = ว่าง</p>
+    {% for side in ['L','R'] %}
+    <div style="margin-bottom:10px"><div class="small muted" style="margin-bottom:4px">{{ 'ฝั่งซ้าย' if side == 'L' else 'ฝั่งขวา' }} (บนสุดติดทะเล)</div>
+      {% for h in houses if h.side == side %}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;margin-bottom:4px;border-radius:6px;background:{% if h.id in tonight_taken %}#F9DDD7{% elif h.id in blocked %}#ECE9E4{% else %}#EAF3E1{% endif %}">
+        <span>{{ h.name_th }}</span>
+        <span class="small">{% if h.id in tonight_taken %}มีผู้เข้าพัก{% elif h.id in blocked %}ปิดห้อง{% else %}<a href="/admin/bookings/new?house={{ h.id }}&ci={{ today }}">ว่าง จองเลย</a>{% endif %}
+          {% if h.housekeeping != 'ready' %}<span class="st st--pending" title="สถานะทำความสะอาด">{{ 'รอทำความสะอาด' if h.housekeeping == 'dirty' else 'กำลังทำความสะอาด' }}</span>{% endif %}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+    {% if inquiries %}<p style="margin-top:14px"><a href="/admin/inquiries">ข้อความสอบถามใหม่ {{ inquiries }} รายการ</a></p>{% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "public/base.html" %}
+{% block title %}{{ tt('โปรโมชั่น', 'Offers') }} | {{ tt(conf.resort_name_th, conf.resort_name_en) }}{% endblock %}
+{% block desc %}{{ tt('โปรโมชั่นที่พักติดทะเลนาจอมเทียน ลดวันธรรมดา ของแถมหมูกระทะ คูปอง Tahiti Beach และสะสมแต้มครั้งที่ 6 ลด 50%', 'Current offers at Golden Beach Resort: weeknight discounts, free mookata, Tahiti Beach vouchers and a half-price sixth stay.') }}{% endblock %}
+{% block main %}
+<div class="page-top">
+  <div class="wrap">
+    <h1>{{ tt('โปรโมชั่น', 'Offers') }}</h1>
+    <p>{{ tt('ส่วนลดและของแถมทั้งหมดคำนวณให้อัตโนมัติตอนจองผ่านเว็บไซต์ ไม่ต้องใช้โค้ด', 'Every discount and gift is applied automatically when you book on this site. No codes needed.') }}</p>
+  </div>
+</div>
+<div class="wrap" style="padding-bottom:40px">
+  <div class="promos">
+    {% for p in promos %}
+    <div class="promo">
+      <h3>{{ p.name(lang) }}</h3>
+      <p>{{ p.detail(lang) }}</p>
+      {% if p.start_date or p.end_date %}<small>{% if p.start_date %}{{ thai_date(p.start_date) }} {% endif %}{{ tt('ถึง', 'to') }} {{ thai_date(p.end_date) if p.end_date else tt('แจ้งให้ทราบ', 'further notice') }}</small>{% endif %}
+    </div>
+    {% else %}
+    <p>{{ tt('ตอนนี้ยังไม่มีโปรโมชั่น ติดตามได้ทาง Facebook', 'No offers right now. Follow us on Facebook for the next one.') }}</p>
+    {% endfor %}
+  </div>
+  {% if pkg %}<p style="margin-top:12px">{{ tt('เหมาทั้งรีสอร์ท', 'Whole resort') }} {{ pkg.guests }} {{ tt('ท่าน', 'guests') }} {{ money(pkg.price) }} {{ tt('บาท', 'baht') }}. <a href="{{ L }}/buyout">{{ tt('ดูรายละเอียด', 'Details') }}</a></p>{% endif %}
+</div>
+<section id="terms" style="background:var(--sand)">
+  <div class="wrap" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:40px">
+    <div><h2 style="font-size:26px">{{ tt('กฎของบ้าน', 'House rules') }}</h2><ul>{% for r in tt(conf.house_rules_th, conf.house_rules_en).splitlines() if r.strip() %}<li>{{ r }}</li>{% endfor %}</ul></div>
+    <div><h2 style="font-size:26px">{{ tt('การชำระเงินและการยกเลิก', 'Payment and cancellation') }}</h2>
+      <ul>
+        <li>{{ tt('ชำระ ' ~ conf.deposit_percent ~ '% ของยอดจองภายใน ' ~ conf.hold_hours ~ ' ชั่วโมงหลังแอดมินยืนยันห้องว่าง', 'Pay ' ~ conf.deposit_percent ~ '% within ' ~ conf.hold_hours ~ ' hours of our confirmation') }}</li>
+        {% for r in tt(conf.cancel_policy_th, conf.cancel_policy_en).splitlines() if r.strip() %}<li>{{ r }}</li>{% endfor %}
+      </ul></div>
+  </div>
+</section>
+{% endblock %}

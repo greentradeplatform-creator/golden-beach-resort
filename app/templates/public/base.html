@@ -1,0 +1,102 @@
+{% from "partials/icons.html" import icon %}<!doctype html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ tt('โกลเด้น บีช รีสอร์ท นาจอมเทียน พัทยา | บ้านไม้สักติดทะเล ข้าง Tutu Beach', 'Golden Beach Resort Na Jomtien Pattaya | Teak beach houses next to Tutu Beach') }}{% endblock %}</title>
+<meta name="description" content="{% block desc %}{{ tt('ที่พักติดทะเลนาจอมเทียน พัทยา บ้านไม้สักทรงไทย 9 หลัง ข้าง Tutu Beach พักได้ 2–5 ท่านต่อหลัง เริ่ม 2,000 บาท รวมอาหารเช้า สัตว์เลี้ยงเข้าพักฟรี รับเหมาทั้งรีสอร์ท', 'Beachfront stay on Na Jomtien, Pattaya: nine Thai teak houses next to Tutu Beach, 2–5 guests each, from 2,000 baht with breakfast. Pets stay free; whole-resort buyouts.') }}{% endblock %}">
+<meta name="robots" content="{% block robots %}index, follow, max-image-preview:large{% endblock %}">
+<link rel="canonical" href="{{ canonical }}">
+<link rel="alternate" hreflang="th" href="{{ url_th }}">
+<link rel="alternate" hreflang="en" href="{{ url_en }}">
+<link rel="alternate" hreflang="x-default" href="{{ url_th }}">
+<meta name="theme-color" content="#2E1D12">
+<meta name="geo.region" content="TH-20"><meta name="geo.placename" content="Na Jomtien, Pattaya"><meta name="geo.position" content="{{ conf.lat }};{{ conf.lng }}"><meta name="ICBM" content="{{ conf.lat }}, {{ conf.lng }}">
+<meta property="og:type" content="{% block ogtype %}website{% endblock %}">
+<meta property="og:site_name" content="{{ conf.resort_name_en }}">
+<meta property="og:locale" content="{{ 'en_US' if lang == 'en' else 'th_TH' }}"><meta property="og:locale:alternate" content="{{ 'th_TH' if lang == 'en' else 'en_US' }}">
+<meta property="og:url" content="{{ canonical }}">
+<meta property="og:title" content="{{ self.title()|trim }}">
+<meta property="og:description" content="{{ self.desc()|trim }}">
+<meta property="og:image" content="{{ origin }}{% block ogimage %}/static/img/row-houses.jpg{% endblock %}">
+<meta name="twitter:card" content="summary_large_image">
+{% if conf.google_site_verification %}<meta name="google-site-verification" content="{{ conf.google_site_verification }}">{% endif %}
+{% if conf.bing_site_verification %}<meta name="msvalidate.01" content="{{ conf.bing_site_verification }}">{% endif %}
+<link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/static/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="alternate" type="text/plain" title="llms.txt" href="/llms.txt">
+<link rel="preload" href="/static/fonts/chonburi-thai-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/ibm-plex-sans-thai-looped-thai-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/css/site.css?v=8">
+{% if resort_ld %}<script type="application/ld+json">{{ resort_ld|tojs }}</script>{% endif %}
+{% if conf.ga4_id %}<script async src="https://www.googletagmanager.com/gtag/js?id={{ conf.ga4_id }}"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','{{ conf.ga4_id }}');</script>{% endif %}
+{% block head %}{% endblock %}
+</head>
+<body class="{% block bodyclass %}{% endblock %}">
+<a class="sr-only" href="#main">{{ tt('ข้ามไปเนื้อหา', 'Skip to content') }}</a>
+<header class="site-head {% block headclass %}is-solid{% endblock %}" id="head">
+  <div class="wrap site-head__in">
+    <a class="brand" href="{{ L }}/">
+      <span class="brand__th">{{ tt('โกลเด้น บีช รีสอร์ท', 'Golden Beach Resort') }}</span>
+      <span class="brand__en">{{ tt('Golden Beach Resort นาจอมเทียน', 'Na Jomtien, Pattaya') }}</span>
+    </a>
+    <button class="menu-btn" aria-controls="nav" aria-expanded="false" data-menu>{{ icon('menu', 28) }}<span class="sr-only">{{ tt('เมนู', 'Menu') }}</span></button>
+    <nav class="nav" id="nav">
+      <button class="menu-btn menu-close" data-menu>{{ icon('close', 28) }}<span class="sr-only">{{ tt('ปิดเมนู', 'Close menu') }}</span></button>
+      {% set links = [('/houses', tt('บ้านพัก','Houses')), ('/availability', tt('เช็คห้องว่าง','Availability')), ('/buyout', tt('เหมารีสอร์ท','Groups')), ('/promotions', tt('โปรโมชั่น','Offers')), ('/faq', tt('คำถามที่พบบ่อย','FAQ')), ('/contact', tt('ติดต่อ','Contact'))] %}
+      {% for href, label in links %}<a href="{{ href }}" {% if path.startswith(href) %}aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+      <a class="lang" href="{{ alt_lang_href }}" hreflang="{{ 'en' if lang == 'th' else 'th' }}">{{ 'English' if lang == 'th' else 'ภาษาไทย' }}</a>
+      <a class="btn" href="{{ L }}/book">{{ tt('จองบ้านพัก', 'Book a house') }}</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">{% block main %}{% endblock %}</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <div class="foot-brand">{{ conf.resort_name_th }}</div>
+        <p class="small" style="margin-top:4px">{{ conf.resort_name_en }}</p>
+        <p>{{ tt(conf.address_th, conf.address_en) }}</p>
+      </div>
+      <div>
+        <h2 class="foot-h">{{ tt('โทรจองหรือสอบถาม', 'Call us') }}</h2>
+        <ul>
+          <li><a href="tel:{{ conf.phone_main|replace('-','') }}">{{ conf.phone_main }}</a> {{ tt(conf.phone_main_label, 'Resort') }}</li>
+          {% if conf.phone_alt %}<li><a href="tel:{{ conf.phone_alt|replace('-','') }}">{{ conf.phone_alt }}</a> {{ conf.phone_alt_label }}</li>{% endif %}
+          {% if conf.email %}<li><a href="mailto:{{ conf.email }}">{{ conf.email }}</a></li>{% endif %}
+          {% if conf.line_oa_id %}<li>LINE {{ conf.line_oa_id }}</li>{% endif %}
+          <li><a href="{{ conf.facebook_url }}" rel="noopener" target="_blank">Facebook {{ conf.facebook_name }}</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="foot-h">{{ tt('เว็บไซต์', 'Site') }}</h2>
+        <ul>
+          <li><a href="{{ L }}/houses">{{ tt('บ้านพักทั้ง 9 หลัง', 'All nine houses') }}</a></li>
+          <li><a href="{{ L }}/availability">{{ tt('ตารางห้องว่าง', 'Availability') }}</a></li>
+          <li><a href="{{ L }}/booking">{{ tt('ตรวจสอบการจอง / แนบสลิป', 'Find my booking') }}</a></li>
+          <li><a href="{{ L }}/buyout">{{ tt('เหมารีสอร์ท กรุ๊ป สัมมนา', 'Groups and events') }}</a></li>
+          <li><a href="{{ L }}/faq">{{ tt('คำถามที่พบบ่อย', 'FAQ') }}</a></li>
+          <li><a href="{{ L }}/contact#map">{{ tt('แผนที่และการเดินทาง', 'Map and directions') }}</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© {{ today.year + (543 if lang=='th' else 0) }} {{ conf.bank_account_name if lang=='th' else 'Golden Beach Resort Co., Ltd.' }}</span>
+      <span>{{ tt('เช็คอิน', 'Check-in') }} {{ conf.checkin_time }} {{ tt('น.','') }} / {{ tt('เช็คเอาท์', 'Check-out') }} {{ conf.checkout_time }} {{ tt('น.','') }}</span>
+    </div>
+  </div>
+</footer>
+
+<div class="callbar">
+  <a class="btn btn--ghost" href="tel:{{ conf.phone_main|replace('-','') }}">{{ icon('phone', 20) }} {{ tt('โทร', 'Call') }}</a>
+  <a class="btn" href="{{ L }}/book">{{ tt('จองบ้านพัก', 'Book a house') }}</a>
+</div>
+{% if flash %}<div class="flash flash--{{ flash.kind }}" role="status" data-flash>{{ flash.msg }}</div>{% endif %}
+<script src="/static/js/site.js?v=5" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

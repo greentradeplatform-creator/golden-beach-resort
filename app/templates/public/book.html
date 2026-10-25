@@ -1,0 +1,120 @@
+{% extends "public/base.html" %}
+{% block title %}{{ tt('จองบ้านพัก', 'Book a house') }} | {{ tt(conf.resort_name_th, conf.resort_name_en) }}{% endblock %}
+{% block robots %}noindex, follow{% endblock %}
+{% block main %}
+<div class="wrap book">
+  <form method="post" action="{{ L }}/book" novalidate>
+    <ol class="steps"><li class="is-on">{{ tt('เลือกวันและบ้าน', 'Dates and house') }}</li><li>{{ tt('ข้อมูลผู้จอง', 'Your details') }}</li><li>{{ tt('ส่งคำขอ', 'Send request') }}</li></ol>
+    <h1 style="font-size:clamp(30px,4vw,42px)">{{ tt('จองบ้านพัก', 'Book a house') }}</h1>
+    {% if error %}<div class="alert alert--error" role="alert">{{ error }}</div>{% endif %}
+
+    <fieldset class="fset">
+      <legend>{{ tt('วันที่และจำนวนผู้เข้าพัก', 'Dates and guests') }}</legend>
+      <div class="grid2">
+        <div class="field"><label for="b-ci">{{ tt('เช็คอิน', 'Check-in') }}</label><input id="b-ci" type="date" name="check_in" value="{{ ci }}" min="{{ today }}" required></div>
+        <div class="field"><label for="b-co">{{ tt('เช็คเอาท์', 'Check-out') }}</label><input id="b-co" type="date" name="check_out" value="{{ co }}" min="{{ ci }}" required></div>
+      </div>
+      <div class="grid3">
+        <div class="field"><label for="b-a">{{ tt('ผู้ใหญ่', 'Adults') }}</label><select id="b-a" name="adults">{% for n in range(1, 6) %}<option {% if n == adults %}selected{% endif %}>{{ n }}</option>{% endfor %}</select></div>
+        <div class="field"><label for="b-c">{{ tt('เด็ก', 'Children') }}</label><select id="b-c" name="children">{% for n in range(0, 5) %}<option {% if n == children %}selected{% endif %}>{{ n }}</option>{% endfor %}</select></div>
+        <div class="field"><label for="b-p">{{ tt('สัตว์เลี้ยง', 'Pets') }}</label><select id="b-p" name="pets">{% for n in range(0, 4) %}<option {% if form.pets == n|string %}selected{% endif %}>{{ n }}</option>{% endfor %}</select></div>
+      </div>
+    </fieldset>
+
+    <fieldset class="fset">
+      <legend>{{ tt('เลือกบ้าน', 'Choose a house') }}</legend>
+      <div class="hpick" data-hpick>
+        {% for h in houses %}
+        <label data-hid="{{ h.id }}">
+          <input type="radio" name="house_id" value="{{ h.id }}" {% if sel and sel.id == h.id %}checked{% endif %} required data-img="{{ h.cover|replace('.jpg','-m.jpg') if h.cover.startswith('/static') else h.cover }}" data-name="{{ h.name(lang) }}" data-beds="{{ tt(h.beds_th, h.beds_en) }}">
+          <span><b>{{ h.name(lang) }}</b><small>{{ tt(KINDS[h.kind][0], KINDS[h.kind][1]) }} {{ h.max_guests }} {{ tt('ท่าน', 'guests') }} {{ money(h.price_weekday) }}</small> <em data-taken hidden>{{ tt('ไม่ว่าง', 'taken') }}</em></span>
+        </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+
+    {% if addons %}
+    <fieldset class="fset">
+      <legend>{{ tt('บริการเสริม', 'Extras') }}</legend>
+      {% for a in addons %}
+      <div class="addon">
+        <label for="ad-{{ a.id }}" style="margin:0;color:var(--ink);font-weight:400">{{ a.name(lang) }} <span class="muted">{{ money(a.price) }} {{ tt('บาท', 'baht') }}{{ tt(' ต่อคืน',' per night') if a.unit == 'night' else (tt(' ต่อคน',' per person') if a.unit == 'person' else tt(' ต่อการเข้าพัก',' per stay')) }}</span></label>
+        <select id="ad-{{ a.id }}" name="addon_{{ a.id }}">{% for n in range(0, 4) %}<option {% if form['addon_' ~ a.id] == n|string %}selected{% endif %}>{{ n }}</option>{% endfor %}</select>
+      </div>
+      {% endfor %}
+      <p class="small muted" style="margin-top:10px">{{ tt('ปิ้งย่างได้ นำวัตถุดิบมาเอง รีสอร์ทไม่มีจำหน่าย', 'BBQ is welcome, bring your own ingredients; none are sold on site.') }}</p>
+    </fieldset>
+    {% endif %}
+
+    <fieldset class="fset">
+      <legend>{{ tt('ข้อมูลผู้จอง', 'Your details') }}</legend>
+      <div class="field"><label for="b-n">{{ tt('ชื่อ-นามสกุล', 'Full name') }}</label><input id="b-n" name="name" autocomplete="name" value="{{ form.name or '' }}" required></div>
+      <div class="grid2">
+        <div class="field"><label for="b-ph">{{ tt('เบอร์โทร', 'Phone') }}</label><input id="b-ph" name="phone" type="tel" inputmode="tel" autocomplete="tel" value="{{ form.phone or '' }}" placeholder="08x-xxx-xxxx" required></div>
+        <div class="field"><label for="b-e">{{ tt('อีเมล (รับใบยืนยัน)', 'E-mail (for your confirmation)') }}</label><input id="b-e" name="email" type="email" autocomplete="email" value="{{ form.email or '' }}"></div>
+      </div>
+      <div class="field"><label for="b-l">{{ tt('LINE ID (ไม่บังคับ)', 'LINE ID (optional)') }}</label><input id="b-l" name="line_id" value="{{ form.line_id or '' }}"></div>
+      <div class="field"><label for="b-s">{{ tt('ความต้องการพิเศษ', 'Anything we should know?') }}</label><textarea id="b-s" name="special_request" placeholder="{{ tt('เช่น มาถึงดึก พาสุนัขพันธุ์เล็กมา 1 ตัว', 'e.g. arriving late, bringing one small dog') }}">{{ form.special_request or '' }}</textarea></div>
+      <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <label class="check"><input type="checkbox" name="agree" value="1" {% if form.agree %}checked{% endif %}> <span>{{ tt('ฉันอ่านกฎของบ้านและเงื่อนไขการยกเลิกแล้ว', 'I have read the house rules and cancellation terms') }} (<a href="{{ L }}/promotions#terms">{{ tt('อ่าน', 'read') }}</a>)</span></label>
+    </fieldset>
+
+    <button class="btn btn--block" type="submit" data-quote-submit style="min-height:56px;font-size:17px">{{ tt('ส่งคำขอจอง', 'Send booking request') if conf.booking_mode != 'instant' else tt('จองและไปหน้าชำระเงิน', 'Book and pay') }}</button>
+    <p class="small muted" style="margin-top:12px">
+      {% if conf.booking_mode != 'instant' %}{{ tt('ยังไม่ต้องโอนเงิน แอดมินจะตรวจสอบห้องว่างและแจ้งยอดชำระให้ภายในวันเดียวกัน', 'No payment yet. We check the house and send you the amount to pay, usually the same day.') }}
+      {% else %}{{ tt('ระบบจะกันบ้านไว้ให้ ' ~ conf.hold_hours ~ ' ชั่วโมงเพื่อชำระเงิน', 'We hold the house for ' ~ conf.hold_hours ~ ' hours while you pay.') }}{% endif %}
+    </p>
+    <div data-quote data-labels='{{ {"nights": tt("คืน","nights"), "total": tt("ยอดรวม","Total"), "baht": tt("บาท","baht"), "gift": tt("ของแถม:","Gift:"), "extra": tt("ผู้เข้าพักเพิ่ม","Extra guests"), "taken": tt("บ้านหลังนี้ไม่ว่างในวันที่เลือก","This house is taken on those dates"), "freeFrom": tt("ว่างอีกครั้ง","free again from"), "alts": tt("หลังที่ว่าง:","Free instead:")}|tojs }}' hidden></div>
+  </form>
+
+  <aside class="summary" aria-live="polite">
+    <img data-sum-img src="{{ (sel.cover|replace('.jpg','-m.jpg')) if sel else '/static/img/row-houses-m.jpg' }}" alt="">
+    <div class="summary__body">
+      <h3 data-sum-name style="margin-bottom:2px">{{ sel.name(lang) if sel else tt('ยังไม่ได้เลือกบ้าน', 'No house chosen') }}</h3>
+      <div class="small muted" data-sum-beds>{{ tt(sel.beds_th, sel.beds_en) if sel else '' }}</div>
+      <div class="quote" data-quote-out style="margin-top:14px"></div>
+      <p class="small muted" style="margin:0">{{ tt('ราคารวมอาหารเช้าแล้ว', 'Breakfast included') }}</p>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+  const form = document.querySelector('.book form');
+  const radios = [...form.querySelectorAll('[name=house_id]')];
+  const show = () => {
+    const r = radios.find((x) => x.checked); if (!r) return;
+    document.querySelector('[data-sum-img]').src = r.dataset.img;
+    document.querySelector('[data-sum-name]').textContent = r.dataset.name;
+    document.querySelector('[data-sum-beds]').textContent = r.dataset.beds;
+  };
+  radios.forEach((r) => r.addEventListener('change', show));
+  // grey out houses that are taken for the chosen dates
+  const mark = async () => {
+    const ci = form.check_in.value, co = form.check_out.value;
+    if (!ci || !co || co <= ci) return;
+    const guests = (+form.adults.value) + (+form.children.value);
+    const r = await fetch(`/api/availability?ci=${ci}&co=${co}&guests=${guests}`);
+    if (!r.ok) return;
+    const s = await r.json();
+    document.querySelectorAll('[data-hid]').forEach((l) => {
+      const st = s[l.dataset.hid]; if (!st) return;
+      const off = !st.free || !st.fits;
+      l.classList.toggle('is-taken', off);
+      l.querySelector('[data-taken]').hidden = st.free;
+    });
+  };
+  const steps = [...document.querySelectorAll('.steps li')];
+  const progress = () => {
+    const s1 = radios.some((x) => x.checked) && form.check_in.value && form.check_out.value;
+    const s2 = s1 && form.name.value.trim() && form.phone.value.trim().length >= 9;
+    const idx = !s1 ? 0 : (!s2 ? 1 : 2);
+    steps.forEach((li, i) => { li.classList.toggle('is-done', i < idx); li.classList.toggle('is-on', i === idx); });
+  };
+  form.addEventListener('input', progress); form.addEventListener('change', progress); progress();
+  form.addEventListener('change', (e) => { if (['check_in','check_out','adults','children'].includes(e.target.name)) mark(); });
+  mark();
+})();
+</script>
+{% endblock %}

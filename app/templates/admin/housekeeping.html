@@ -1,0 +1,26 @@
+{% extends "admin/base.html" %}
+{% block title %}สถานะบ้าน{% endblock %}
+{% block heading %}สถานะบ้านวันนี้{% endblock %}
+{% block content %}
+<p class="muted">หลังลูกค้าเช็คเอาท์ ระบบตั้งบ้านเป็น "รอทำความสะอาด" ให้อัตโนมัติ แม่บ้านกดเปลี่ยนสถานะเมื่อทำความสะอาดและฆ่าเชื้อเสร็จ</p>
+<div class="hk">
+  {% for h in houses %}
+  <div class="hk__card is-{{ h.housekeeping }}">
+    <h3>{{ h.name_th }}</h3>
+    <div class="small muted">{{ KINDS[h.kind][0] }}, {{ 'ฝั่งซ้าย' if h.side == 'L' else 'ฝั่งขวา' }} หลังที่ {{ h.position }}</div>
+    <p style="margin:10px 0;font-size:14.5px">
+      {% if h.id in dep %}<b style="color:var(--taken)">ออกวันนี้</b> {{ dep[h.id].customer.name }}<br>{% endif %}
+      {% if h.id in arr %}<b style="color:var(--gulf)">เข้าวันนี้</b> {{ arr[h.id].customer.name }} {{ arr[h.id].adults + arr[h.id].children }} ท่าน{% if arr[h.id].pets %} + สัตว์เลี้ยง{% endif %}<br>{% endif %}
+      {% if h.id in stay and h.id not in dep %}กำลังเข้าพัก: {{ stay[h.id].customer.name }} ถึง {{ thai_date(stay[h.id].check_out, year=False) }}<br>{% endif %}
+      {% if h.id in tomorrow %}<span class="muted">พรุ่งนี้เข้า: {{ tomorrow[h.id].customer.name }}</span><br>{% endif %}
+      {% if h.id not in dep and h.id not in arr and h.id not in stay %}<span class="muted">ไม่มีเข้าออกวันนี้</span>{% endif %}
+    </p>
+    <form method="post" action="/admin/housekeeping/{{ h.id }}" class="actions">
+      {% for k, label in [('dirty','รอทำความสะอาด'),('cleaning','กำลังทำ'),('ready','สะอาด ฆ่าเชื้อแล้ว')] %}
+      <button class="btn btn--sm {% if h.housekeeping == k %}{% if k=='ready' %}btn--ok{% elif k=='dirty' %}btn--danger{% else %}{% endif %}{% else %}btn--ghost{% endif %}" name="state" value="{{ k }}" {% if h.housekeeping == k %}aria-pressed="true"{% endif %}>{{ label }}</button>
+      {% endfor %}
+    </form>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

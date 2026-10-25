@@ -1,0 +1,170 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ b.code }}{% endblock %}
+{% block heading %}{{ b.code }} <span class="st st--{{ b.status }}" style="vertical-align:middle;font-family:var(--body)">{{ STATUS_TH[b.status] }}</span>{% endblock %}
+{% block content %}
+{% if conflicts %}
+<div class="conflict">
+  <strong>⚠️ คำขอนี้ทับวันกับรายการอื่น</strong>
+  <ul>{% for c in conflicts %}<li>{% if c.booking_id %}<a href="/admin/bookings/{{ c.booking_id }}">{{ c.code }}</a> {{ STATUS_TH.get(c.status, c.status) }} ช่องทาง {{ CHANNELS.get(c.channel, (c.channel,))[0] }}{% else %}ปิดห้อง: {{ c.reason }}{% endif %} {{ thai_date(c.start) }} ถึง {{ thai_date(c.end) }}</li>{% endfor %}</ul>
+  {% if alts %}<p style="margin:8px 0 0">บ้านที่ยังว่างช่วงเดียวกัน: {% for a in alts %}<b>{{ a.name_th }}</b>{% if not loop.last %}, {% endif %}{% endfor %} (ย้ายได้จากแผง "ย้ายบ้านหรือเปลี่ยนวัน" ด้านล่าง)</p>{% endif %}
+</div>
+{% endif %}
+
+<div class="cols-2-1">
+  <div>
+    <div class="panel">
+      <div class="panel__head"><h2>{{ b.house.name_th }}</h2><span class="muted">{{ thai_date(b.check_in, short=False) }} – {{ thai_date(b.check_out, short=False) }} ({{ b.nights }} คืน)</span></div>
+      <dl class="kv2">
+        <dt>ลูกค้า</dt><dd><b>{{ b.customer.name }}</b> <a href="tel:{{ b.customer.phone }}">{{ fmt_phone(b.customer.phone) }}</a>{% if b.customer.email %} {{ b.customer.email }}{% endif %}{% if b.customer.line_id %} LINE {{ b.customer.line_id }}{% endif %}</dd>
+        <dt>ผู้เข้าพัก</dt><dd>ผู้ใหญ่ {{ b.adults }} เด็ก {{ b.children }}{% if b.pets %} สัตว์เลี้ยง {{ b.pets }}{% endif %}</dd>
+        <dt>ช่องทาง</dt><dd>{{ CHANNELS[b.channel][0] }}</dd>
+        <dt>ผู้ปิดการขาย</dt><dd>{{ b.agent.display_name if b.agent else 'ระบบเว็บไซต์ (กองกลาง)' }}</dd>
+        <dt>สร้างเมื่อ</dt><dd>{{ thai_date(b.created_at) }} {{ b.created_at.strftime('%H:%M') }}{% if b.created_by %} โดย {{ b.created_by.display_name }}{% endif %}</dd>
+        {% if b.hold_until and b.status == 'awaiting_payment' %}<dt>กันห้องถึง</dt><dd style="color:var(--taken)">{{ thai_date(b.hold_until) }} {{ b.hold_until.strftime('%H:%M') }} น.</dd>{% endif %}
+        {% if b.special_request %}<dt>คำขอพิเศษ</dt><dd>{{ b.special_request }}</dd>{% endif %}
+        {% if b.cancel_reason %}<dt>เหตุผล</dt><dd>{{ b.cancel_reason }}</dd>{% endif %}
+        {% if b.group_ref %}<dt>เหมารีสอร์ท</dt><dd>กลุ่ม {{ b.group_ref }}: {% for g in group %}<a href="/admin/bookings/{{ g.id }}">{{ g.house.name_th }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
+      </dl>
+    </div>
+
+    {% if chat %}
+    <div class="panel">
+      <div class="panel__head"><h2>ข้อความส่งลูกค้า</h2><button type="button" class="btn btn--sm" data-copy="{{ chat }}">คัดลอก</button></div>
+      <p class="small muted" style="margin-top:0">สำหรับลูกค้าที่จองทาง Facebook / LINE / โทรศัพท์ ระบบเขียนให้ตามสถานะล่าสุด คัดลอกไปวางในแชทได้เลย</p>
+      <pre class="chatmsg">{{ chat }}</pre>
+    </div>
+    {% endif %}
+    {% if charges %}
+    <div class="panel">
+      <h2>ชำระออนไลน์ (Opn)</h2>
+      {% for c in charges %}<p class="small" style="margin:0 0 6px"><code>{{ c.charge_id }}</code> {{ money(c.amount) }} บาท · {{ c.method }} ·
+        <span class="st {% if c.status == 'successful' %}st--completed{% elif c.status == 'pending' %}st--pending{% else %}st--cancelled{% endif %}">{{ {'successful':'สำเร็จ','pending':'รอชำระ','failed':'ไม่สำเร็จ','expired':'หมดอายุ'}.get(c.status, c.status) }}</span>
+        <span class="muted">{{ c.created_at.strftime('%d/%m %H:%M') }}</span>{% if c.failure %} <span class="muted">{{ c.failure }}</span>{% endif %}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="panel">
+      <h2>สิ่งที่ทำได้ตอนนี้</h2>
+      <div class="actions">
+        {% if b.status == 'pending' %}
+          <form method="post" action="/admin/bookings/{{ b.id }}/action"><input type="hidden" name="action" value="approve"><button class="btn btn--ok">ยืนยันห้องว่าง ส่งยอดให้ลูกค้าชำระ</button></form>
+          <form method="post" action="/admin/bookings/{{ b.id }}/action" data-confirm="ปฏิเสธคำขอนี้?"><input type="hidden" name="action" value="reject"><input type="hidden" name="reason" value="ห้องไม่ว่างในช่วงที่ขอ"><button class="btn btn--ghost">ปฏิเสธ (ห้องไม่ว่าง)</button></form>
+        {% endif %}
+        {% if b.status == 'confirmed' %}<form method="post" action="/admin/bookings/{{ b.id }}/action"><input type="hidden" name="action" value="checkin"><button class="btn btn--gulf">เช็คอิน</button></form>{% endif %}
+        {% if b.status in ('checked_in', 'confirmed') and b.check_out <= today %}<form method="post" action="/admin/bookings/{{ b.id }}/action"><input type="hidden" name="action" value="checkout"><button class="btn">เช็คเอาท์</button></form>{% endif %}
+        {% if b.status == 'checked_in' and b.check_out > today %}<form method="post" action="/admin/bookings/{{ b.id }}/action" data-confirm="เช็คเอาท์ก่อนกำหนด?"><input type="hidden" name="action" value="checkout"><button class="btn btn--ghost">เช็คเอาท์ก่อนกำหนด</button></form>{% endif %}
+      </div>
+      {% if b.status in ('awaiting_payment', 'slip_uploaded', 'confirmed', 'checked_in') and b.balance > 0.5 %}
+      <form method="post" action="/admin/bookings/{{ b.id }}/action" style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin-top:16px">
+        <input type="hidden" name="action" value="pay">
+        <div><label>รับเงิน (บาท) คงค้าง {{ money(b.balance) }}</label><input name="amount" inputmode="decimal" value="{{ '%.0f'|format(b.balance) }}"></div>
+        <div><label>วิธีชำระ</label><select name="method"><option value="transfer">โอนบัญชี</option><option value="promptpay">พร้อมเพย์</option><option value="cash">เงินสด</option><option value="card">บัตร</option><option value="airbnb">Airbnb จ่ายให้</option></select></div>
+        <button class="btn btn--ok">บันทึกรับเงิน</button>
+      </form>
+      {% endif %}
+      {% if b.status not in ('completed','cancelled','rejected','expired','no_show') %}
+      <details class="more"><summary>ยกเลิก / ไม่มาเข้าพัก</summary>
+        <form method="post" action="/admin/bookings/{{ b.id }}/action" data-confirm="ยืนยันการยกเลิก? ห้องจะว่างทันทีและค่าคอมจะถูกหักคืน" style="display:grid;grid-template-columns:2fr 1fr auto;gap:10px;align-items:end">
+          <div><label>เหตุผล</label><input name="reason" required></div>
+          <div><label>ประเภท</label><select name="action"><option value="cancel">ยกเลิก</option><option value="no_show">ไม่มาเข้าพัก</option></select></div>
+          <button class="btn btn--danger">บันทึก</button>
+        </form>
+      </details>
+      <details class="more"><summary>ย้ายบ้านหรือเปลี่ยนวัน</summary>
+        <form method="post" action="/admin/bookings/{{ b.id }}/action" style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:end">
+          <input type="hidden" name="action" value="move">
+          <div><label>บ้าน</label><select name="house_id">{% for h in houses %}<option value="{{ h.id }}" {% if h.id == b.house_id %}selected{% endif %}>{{ h.name_th }}</option>{% endfor %}</select></div>
+          <div><label>เช็คอิน</label><input type="date" name="check_in" value="{{ b.check_in }}"></div>
+          <div><label>เช็คเอาท์</label><input type="date" name="check_out" value="{{ b.check_out }}"></div>
+          <button class="btn btn--ghost">ย้าย</button>
+        </form>
+        <p class="small muted">ยอดเงินคงเดิม ถ้าราคาเปลี่ยนให้บันทึกรับเงินเพิ่มหรือแจ้งในหมายเหตุ</p>
+      </details>
+      {% endif %}
+      {% if user.role in ('owner','manager') %}
+      <details class="more"><summary>แก้ช่องทางหรือผู้ปิดการขาย</summary>
+        <form method="post" action="/admin/bookings/{{ b.id }}/action" style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end">
+          <input type="hidden" name="action" value="agent">
+          <div><label>ช่องทาง</label><select name="channel">{% for c in channels %}<option value="{{ c }}" {% if b.channel == c %}selected{% endif %}>{{ CHANNELS[c][0] }}</option>{% endfor %}</select></div>
+          <div><label>ผู้ปิดการขาย</label><select name="agent_id"><option value="">ไม่ระบุ</option>{% for a in agents %}<option value="{{ a.id }}" {% if b.agent_id == a.id %}selected{% endif %}>{{ a.display_name }}</option>{% endfor %}</select></div>
+          <button class="btn btn--ghost">บันทึก</button>
+        </form>
+        <p class="small muted">ถ้าการจองชำระแล้ว ค่าคอมที่ลงไปแล้วไม่เปลี่ยนอัตโนมัติ ให้ยกเลิกแล้วสร้างใหม่ หรือปรับยอดในหน้าค่าคอม</p>
+      </details>
+      {% endif %}
+    </div>
+
+    {% if b.payments %}
+    <div class="panel">
+      <h2>การชำระเงินและสลิป</h2>
+      {% for p in b.payments %}
+      <div style="display:flex;gap:16px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line)" class="slip">
+        {% if p.slip_path %}<a href="{{ p.slip_path }}" target="_blank"><img src="{{ p.slip_path }}" alt="สลิป"></a>{% endif %}
+        <div style="flex:1">
+          <b>{{ money(p.amount) }} บาท</b> <span class="muted">{{ p.method }}</span>
+          <span class="st {% if p.status == 'verified' %}st--completed{% elif p.status == 'rejected' %}st--cancelled{% else %}st--pending{% endif %}">{{ {'pending':'รอตรวจ','verified':'ยืนยันแล้ว','rejected':'ไม่ผ่าน'}[p.status] }}</span>
+          <div class="small muted">{{ thai_date(p.created_at) }} {{ p.created_at.strftime('%H:%M') }}{% if p.note and '⚠️' not in p.note %} {{ p.note }}{% endif %}</div>
+          {% if p.note and '⚠️' in p.note %}<div class="alert alert--error small" style="margin:6px 0 0">{{ p.note }} ตรวจยอดเงินเข้าบัญชีจริงก่อนกดยืนยัน</div>{% endif %}
+          {% if p.status == 'pending' %}
+          <div class="actions" style="margin-top:10px">
+            <form method="post" action="/admin/bookings/{{ b.id }}/action" style="display:flex;gap:8px;align-items:center"><input type="hidden" name="action" value="verify_slip"><input type="hidden" name="payment_id" value="{{ p.id }}">
+              <input name="amount" value="{{ '%.0f'|format(p.amount|float) }}" style="width:110px" aria-label="ยอดที่ตรวจแล้ว"><button class="btn btn--ok btn--sm">ยอดถูกต้อง ยืนยัน</button></form>
+            <form method="post" action="/admin/bookings/{{ b.id }}/action" style="display:flex;gap:8px"><input type="hidden" name="action" value="reject_slip"><input type="hidden" name="payment_id" value="{{ p.id }}">
+              <input name="reason" placeholder="เหตุผล" style="width:140px"><button class="btn btn--ghost btn--sm">ไม่ผ่าน</button></form>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="panel">
+      <h2>หมายเหตุภายใน</h2>
+      <form method="post" action="/admin/bookings/{{ b.id }}/action"><input type="hidden" name="action" value="note">
+        <textarea name="admin_note" style="min-height:80px">{{ b.admin_note }}</textarea>
+        <button class="btn btn--ghost btn--sm" style="margin-top:8px">บันทึกหมายเหตุ</button></form>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <h2>ยอดเงิน</h2>
+      <div class="quote">
+        <div class="quote__line"><span>ค่าบ้าน {{ b.nights }} คืน</span><span>{{ money(b.room_total) }}</span></div>
+        {% if b.extra_guest_total|float %}<div class="quote__line"><span>ผู้เข้าพักเพิ่ม</span><span>{{ money(b.extra_guest_total) }}</span></div>{% endif %}
+        {% for a in b.addons %}<div class="quote__line"><span>{{ a.name }} × {{ a.qty }}</span><span>{{ money(a.amount) }}</span></div>{% endfor %}
+        {% if b.discount_total|float %}<div class="quote__line quote__line--disc"><span>ส่วนลด{% if bd.discounts %} ({{ bd.discounts|map(attribute='name')|join(', ') }}){% endif %}</span><span>−{{ money(b.discount_total) }}</span></div>{% endif %}
+        <div class="quote__line quote__line--total"><span>ยอดรวม</span><span>{{ money(b.total) }}</span></div>
+        <div class="quote__line"><span>ต้องชำระ ({{ conf.deposit_percent }}%)</span><span>{{ money(b.deposit_due) }}</span></div>
+        <div class="quote__line"><span>ชำระแล้ว</span><span>{{ money(b.amount_paid) }}</span></div>
+        <div class="quote__line" style="font-weight:600"><span>คงค้าง</span><span>{{ money(b.balance) }}</span></div>
+        {% for g in bd.gifts or [] %}<div class="quote__gift">ของแถม: {{ g }}</div>{% endfor %}
+      </div>
+      {% if b.status in ('confirmed','checked_in','completed') %}
+      <h3 style="margin-top:16px">แยกรายได้</h3>
+      <div class="quote">
+        {% if b.platform_fee|float %}<div class="quote__line"><span>ค่าธรรมเนียมแพลตฟอร์ม</span><span>{{ money(b.platform_fee) }}</span></div>{% endif %}
+        <div class="quote__line"><span>ค่าคอม {{ b.agent.display_name if b.agent else '' }}</span><span>{{ money(b.commission_amount) }}</span></div>
+        <div class="quote__line quote__line--total"><span>รายได้รีสอร์ท</span><span>{{ money(b.resort_revenue) }}</span></div>
+      </div>
+      {% endif %}
+      {% if b.status in ('awaiting_payment','slip_uploaded') %}
+      {% set msg = "เรียนคุณ" ~ b.customer.name ~ "\nบ้าน" ~ b.house.name_th ~ " ว่างสำหรับวันที่ " ~ thai_date(b.check_in) ~ " - " ~ thai_date(b.check_out) ~ "\nยอดชำระ " ~ money((b.deposit_due|float) - (b.amount_paid|float)) ~ " บาท\nโอนเข้า " ~ conf.bank_name ~ " " ~ conf.bank_account_no ~ "\n" ~ conf.bank_account_name ~ "\nแนบสลิปและดูสถานะได้ที่หน้า ตรวจสอบการจอง ของเว็บไซต์ เลขจอง " ~ b.code %}
+      <button type="button" class="btn btn--ghost btn--sm" style="margin-top:12px" data-copy="{{ msg }}">คัดลอกข้อความแจ้งยอดให้ลูกค้า</button>
+      <p class="small muted" style="margin:6px 0 0">วางในแชท Facebook หรือ LINE ได้ทันที</p>
+      {% endif %}
+    </div>
+
+    {% if history %}
+    <div class="panel"><h2>ประวัติลูกค้ารายนี้</h2>
+      <ul class="log">{% for h in history %}<li><a href="/admin/bookings/{{ h.id }}">{{ h.code }}</a> {{ h.house.name_th }} {{ thai_date(h.check_in) }} <span class="st st--{{ h.status }}">{{ STATUS_TH[h.status] }}</span></li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    <div class="panel"><h2>ประวัติการทำรายการ</h2>
+      <ul class="log">{% for l in logs %}<li><time>{{ thai_date(l.created_at) }} {{ l.created_at.strftime('%H:%M') }} {{ l.user.display_name if l.user else 'ระบบ/ลูกค้า' }}</time>{{ l.detail or l.action }}</li>{% endfor %}</ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "admin/base.html" %}
+{% block title %}ลูกค้า{% endblock %}
+{% block heading %}ลูกค้า{% endblock %}
+{% block content %}
+<form class="head-row" method="get"><div class="actions"><input name="q" value="{{ q }}" placeholder="ชื่อหรือเบอร์โทร" style="width:280px"><button class="btn">ค้นหา</button></div></form>
+<div class="panel panel--flush"><div class="t-wrap"><table class="t">
+  <thead><tr><th>ชื่อ</th><th>เบอร์โทร</th><th>อีเมล / LINE</th><th class="num">เข้าพักแล้ว (ครั้ง)</th><th class="num">ยอดใช้จ่าย</th><th>ล่าสุด</th></tr></thead>
+  <tbody>{% for c in rows %}{% set last = (c.bookings|sort(attribute='check_in')|last) %}
+    <tr {% if last %}class="is-link" data-href="/admin/bookings/{{ last.id }}"{% endif %}><td><b>{{ c.name }}</b></td><td>{{ fmt_phone(c.phone) }}</td><td class="small">{{ c.email }} {{ c.line_id }}</td>
+      <td class="num">{{ stats[c.id].n }}{% if stats[c.id].n >= 5 %} <span class="st st--confirmed">ครั้งถัดไปลด 50%</span>{% endif %}</td><td class="num">{{ money(stats[c.id].spent) }}</td>
+      <td>{% if last %}{{ last.house.name_th }} {{ thai_date(last.check_in) }}{% endif %}</td></tr>
+  {% else %}<tr><td colspan="6" class="empty" style="padding:20px">ไม่พบลูกค้า</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

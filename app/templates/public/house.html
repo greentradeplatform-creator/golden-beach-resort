@@ -1,0 +1,97 @@
+{% extends "public/base.html" %}
+{% block title %}{{ tt('บ้าน', '') }}{{ h.name(lang) }} {{ tt(KINDS[h.kind][0], KINDS[h.kind][1]) }} {{ h.max_guests }} {{ tt('ท่าน', 'guests') }} | {{ tt(conf.resort_name_th, conf.resort_name_en) }}{% endblock %}
+{% block desc %}{{ tt('บ้าน' ~ h.name_th ~ ' ' ~ KINDS[h.kind][0] ~ ' พักได้ ' ~ h.max_guests ~ ' ท่าน ' ~ h.beds_th ~ ' คืนละ ' ~ money(h.price_weekday) ~ ' บาท รวมอาหารเช้า ที่โกลเด้น บีช รีสอร์ท นาจอมเทียน พัทยา', h.name_en ~ ' house, sleeps ' ~ h.max_guests ~ ', ' ~ h.beds_en ~ ', ' ~ money(h.price_weekday) ~ ' baht a night with breakfast at Golden Beach Resort, Na Jomtien, Pattaya.') }}{% endblock %}
+{% block ogimage %}{{ h.cover }}{% endblock %}
+{% block head %}<script type="application/ld+json">{{ house_ld|tojs }}</script><script type="application/ld+json">{{ crumbs_ld|tojs }}</script>{% endblock %}
+{% block main %}
+{% set photos = h.photos[:5] %}
+<div class="wrap">
+  <div class="crumbs" style="margin-top:28px"><a href="{{ L }}/houses">{{ tt('บ้านพัก', 'Houses') }}</a> / {{ h.name(lang) }}</div>
+  <div class="gallery gallery--{{ photos|length if photos|length < 3 else 'n' }}">
+    {% for p in photos %}<img width="900" height="600" src="{{ p.path|replace('.jpg','-m.jpg') if p.path.startswith('/static') else p.path }}" srcset="{{ (p.path|replace('.jpg','-m.jpg') if p.path.startswith('/static') else p.path)|srcset }}" sizes="(max-width: 760px) 50vw, 30vw" data-zoom="{{ p.path }}" alt="{{ h.name(lang) }} {{ loop.index }}" {% if not loop.first %}loading="lazy"{% endif %}>{% endfor %}
+  </div>
+
+  <div class="detail">
+    <div>
+      <div class="hrow__kind">{{ tt(KINDS[h.kind][0], KINDS[h.kind][1]) }}, {{ tt('ฝั่งซ้าย' if h.side == 'L' else 'ฝั่งขวา', 'left side' if h.side == 'L' else 'right side') }} {{ tt('หลังที่ ' ~ h.position ~ ' จากทะเล', 'house ' ~ h.position ~ ' from the sea') }}</div>
+      <h1 style="font-size:clamp(32px,4vw,46px)">{{ tt('บ้าน', '') }}{{ h.name(lang) }}</h1>
+      <p class="lede">{{ tt(h.description_th, h.description_en) }}</p>
+      <dl class="specs">
+        <div><dt>{{ tt('พักได้', 'Sleeps') }}</dt><dd>{{ h.max_guests }} {{ tt('ท่าน', 'guests') }}</dd></div>
+        <div><dt>{{ tt('ห้องนอน', 'Bedrooms') }}</dt><dd>{{ h.bedrooms }}</dd></div>
+        <div><dt>{{ tt('ห้องน้ำ', 'Bathroom') }}</dt><dd>{{ h.bathrooms }}</dd></div>
+        <div><dt>{{ tt('เตียง', 'Beds') }}</dt><dd>{{ tt(h.beds_th, h.beds_en) }}</dd></div>
+      </dl>
+      <h2 style="font-size:26px">{{ tt('ในบ้านมีอะไรบ้าง', 'In the house') }}</h2>
+      <ul class="amen">
+        {% for a in h.amenities.split(',') if a in AMENITIES %}<li>{{ tt(AMENITIES[a][0], AMENITIES[a][1]) }}</li>{% endfor %}
+        {% if conf.breakfast_included == '1' %}<li>{{ tt('อาหารเช้า ' ~ h.std_guests ~ ' ชุด', 'Breakfast for ' ~ h.std_guests) }}</li>{% endif %}
+        {% if conf.pets_allowed == '1' %}<li>{{ tt('สัตว์เลี้ยงเข้าพักฟรี', 'Pets stay free') }}</li>{% endif %}
+      </ul>
+      <div class="rules">
+        <strong>{{ tt('ข้อควรรู้ก่อนเข้าพัก', 'Good to know') }}</strong>
+        <ul>
+          <li>{{ tt('เช็คอิน', 'Check-in') }} {{ conf.checkin_time }} {{ tt('น. เช็คเอาท์', ', check-out') }} {{ conf.checkout_time }} {{ tt('น.', '') }}</li>
+          {% for r in tt(conf.house_rules_th, conf.house_rules_en).splitlines() if r.strip() %}<li>{{ r }}</li>{% endfor %}
+        </ul>
+      </div>
+      <h2 style="font-size:26px">{{ tt('วันว่าง 3 เดือนข้างหน้า', 'Free dates, next 3 months') }}</h2>
+      <p class="small muted">{{ tt('วันที่ขีดฆ่าสีแดงคือคืนที่มีผู้จองแล้ว', 'Red, struck-through nights are already booked.') }}</p>
+      <div class="months">
+        {% for first, nxt in months %}
+        <div class="month">
+          <h3 class="month__t">{{ month_label(first.year, first.month) }}</h3>
+          <table><thead><tr>{% for d in dow %}<th>{{ d }}</th>{% endfor %}</tr></thead><tbody><tr>
+            {% for _ in range(first.weekday()) %}<td></td>{% endfor %}
+            {% for i in range((nxt - first).days) %}{% set d = first.replace(day=i+1) %}
+              {% set iso = d.isoformat() %}
+              <td class="{% if d < today %}is-past{% elif iso in taken %}is-taken{% else %}is-free{% endif %}"><span title="{% if iso in prices %}{{ money(prices[iso]) }}{% endif %}">{{ d.day }}</span></td>
+              {% if d.weekday() == 6 and not loop.last %}</tr><tr>{% endif %}
+            {% endfor %}
+          </tr></tbody></table>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <aside>
+      <form class="widget" action="{{ L }}/book" method="get">
+        <input type="hidden" name="house" value="{{ h.slug }}">
+        <input type="hidden" name="house_id" value="{{ h.id }}">
+        <div class="widget__price"><span class="price">{{ money(h.price_weekday) }}</span><span class="muted">{{ tt('บาท / คืน', 'baht / night') }}</span></div>
+        <div class="row2">
+          <div class="field"><label for="w-ci">{{ tt('เช็คอิน', 'Check-in') }}</label><input id="w-ci" type="date" name="check_in" min="{{ today }}" value="{{ today }}"></div>
+          <div class="field"><label for="w-co">{{ tt('เช็คเอาท์', 'Check-out') }}</label><input id="w-co" type="date" name="check_out" min="{{ today }}" value="{{ today.fromordinal(today.toordinal()+1) }}"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="w-a">{{ tt('ผู้ใหญ่', 'Adults') }}</label><select id="w-a" name="adults">{% for n in range(1, h.max_guests + 1) %}<option {% if n == [2, h.max_guests]|min %}selected{% endif %}>{{ n }}</option>{% endfor %}</select></div>
+          <div class="field"><label for="w-c">{{ tt('เด็ก', 'Children') }}</label><select id="w-c" name="children">{% for n in range(0, h.max_guests) %}<option>{{ n }}</option>{% endfor %}</select></div>
+        </div>
+        <div data-quote data-labels='{{ {"nights": tt("คืน","nights"), "total": tt("รวม","Total"), "baht": tt("บาท","baht"), "gift": tt("ของแถม:","Gift:"), "extra": tt("ผู้เข้าพักเพิ่ม","Extra guests"), "taken": tt("ไม่ว่างในช่วงนี้","Taken on these dates"), "freeFrom": tt("ว่างอีกครั้ง","free again from"), "alts": tt("หลังที่ว่าง:","Free instead:")}|tojs }}'></div>
+        <div class="quote" data-quote-out></div>
+        <button class="btn btn--block" type="submit" data-quote-submit>{{ tt('จองบ้านหลังนี้', 'Book this house') }}</button>
+        <p class="small muted" style="margin:10px 0 0">{{ tt('ส่งคำขอก่อน ยังไม่ต้องจ่ายเงิน แอดมินยืนยันห้องว่างแล้วจึงชำระ', 'Send a request first. Pay only after we confirm the house is free.') }}</p>
+      </form>
+    </aside>
+  </div>
+
+  {% if others %}
+  <section style="padding-top:56px">
+    <h2 style="font-size:28px">{{ tt('หลังอื่นขนาดเดียวกัน', 'Similar houses') }}</h2>
+    <div class="near" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">
+      {% for o in others %}<figure><a href="{{ L }}/houses/{{ o.slug }}"><img width="900" height="600" src="{{ o.cover|replace('.jpg','-m.jpg') if o.cover.startswith('/static') else o.cover }}" srcset="{{ (o.cover|replace('.jpg','-m.jpg') if o.cover.startswith('/static') else o.cover)|srcset }}" sizes="(max-width: 760px) 50vw, 30vw" alt="{{ o.name(lang) }}" loading="lazy"></a><figcaption><strong>{{ o.name(lang) }}</strong><span>{{ money(o.price_weekday) }} {{ tt('บาท/คืน', 'baht/night') }}</span></figcaption></figure>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+<div class="lb" data-lb><button aria-label="{{ tt('ปิด', 'Close') }}">×</button><img alt=""></div>
+{% endblock %}
+{% block scripts %}
+<script>
+// The widget posts as GET to /book with check_in/check_out names; map them to ci/co.
+document.querySelector('.widget').addEventListener('submit', (e) => {
+  const f = e.target; e.preventDefault();
+  location.href = `{{ L }}/book?house=${f.house.value}&ci=${f.check_in.value}&co=${f.check_out.value}&adults=${f.adults.value}&children=${f.children.value}`;
+});
+</script>
+{% endblock %}

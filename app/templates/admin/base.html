@@ -1,0 +1,70 @@
+{% from "partials/icons.html" import icon %}<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>{% block title %}หลังบ้าน{% endblock %} | Golden Beach</title>
+<link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/css/site.css?v=8">
+<link rel="stylesheet" href="/static/css/admin.css?v=9">
+</head>
+<body class="adm">
+<div class="shell">
+  <aside class="side" id="side">
+    <a class="side__brand" href="/admin">โกลเด้น บีช รีสอร์ท<small>ระบบหลังบ้าน</small></a>
+    {% set r = user.role %}
+    <nav>
+      {% macro nl(href, label, badge=0) %}<a href="{{ href }}" {% if path == href or (href != '/admin' and path.startswith(href)) %}aria-current="page"{% endif %}><span>{{ label }}</span>{% if badge %}<span class="badge">{{ badge }}</span>{% endif %}</a>{% endmacro %}
+      {% if r != 'housekeeping' %}
+        {{ nl('/admin', 'ภาพรวมวันนี้') }}
+        {{ nl('/admin/calendar', 'ปฏิทินรีสอร์ท') }}
+        {{ nl('/admin/bookings', 'รายการจอง', pending_count) }}
+        {{ nl('/admin/bookings/new', 'สร้างการจอง') }}
+        {{ nl('/admin/quick', 'เช็คว่าง / ตอบแชท') }}
+        {{ nl('/admin/housekeeping', 'แม่บ้าน / สถานะบ้าน') }}
+        <h4>ลูกค้า</h4>
+        {{ nl('/admin/customers', 'ลูกค้า') }}
+        {{ nl('/admin/inquiries', 'ข้อความสอบถาม') }}
+        <h4>รายได้</h4>
+        {{ nl('/admin/wallet', 'กระเป๋าค่าคอม' if r == 'sales' else 'ค่าคอมและการจ่าย') }}
+        {% if r in ('owner','manager') %}
+          {{ nl('/admin/reports', 'รายงาน') }}
+          <h4>ตั้งค่า</h4>
+          {{ nl('/admin/houses', 'บ้านพักและราคา') }}
+          {{ nl('/admin/promotions', 'โปรโมชั่นและบริการเสริม') }}
+          {{ nl('/admin/commission', 'กฎค่าคอมมิชชั่น') }}
+          {{ nl('/admin/settings', 'ตั้งค่าระบบ') }}
+          {% if r == 'owner' %}{{ nl('/admin/users', 'ผู้ใช้งาน') }}{% endif %}
+          {{ nl('/admin/audit', 'ประวัติการแก้ไข') }}
+        {% endif %}
+      {% else %}
+        {{ nl('/admin/housekeeping', 'สถานะบ้านวันนี้') }}
+        {{ nl('/admin/calendar', 'ปฏิทินรีสอร์ท') }}
+      {% endif %}
+      <h4>บัญชี</h4>
+      <a href="/" target="_blank"><span>เปิดหน้าเว็บไซต์</span></a>
+      <form method="post" action="/admin/logout"><button class="btn btn--ghost btn--sm" style="margin:8px 10px;color:#E9DFD2;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)">ออกจากระบบ</button></form>
+    </nav>
+  </aside>
+  <div>
+    <header class="top">
+      <button class="menu-btn" data-side aria-label="เมนู">{{ icon('menu', 26) }}</button>
+      <div class="top__title"><h1>{% block heading %}{% endblock %}</h1></div>
+      <div style="position:relative">
+        <button class="bell" data-bell aria-label="การแจ้งเตือน" aria-expanded="false">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15Z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg>
+          {% if unread %}<span class="badge" style="background:var(--taken);color:#fff" data-bell-count>{{ unread }}</span>{% endif %}
+        </button>
+        <div class="bell-pop" data-bell-pop></div>
+      </div>
+      <div class="who"><b>{{ user.display_name }}</b>{{ {'owner':'เจ้าของ','manager':'ผู้จัดการ','sales':'แอดมินฝ่ายขาย','housekeeping':'แม่บ้าน'}[user.role] }}</div>
+    </header>
+    <main class="content">{% block content %}{% endblock %}</main>
+  </div>
+</div>
+{% if flash %}<div class="flash flash--{{ flash.kind }}" role="status" data-flash>{{ flash.msg }}</div>{% endif %}
+<script src="/static/js/admin.js?v=3" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

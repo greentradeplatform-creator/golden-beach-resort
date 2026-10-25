@@ -1,0 +1,47 @@
+{% extends "public/base.html" %}
+{% block title %}{{ tt('ติดต่อและแผนที่', 'Contact and map') }} | {{ tt(conf.resort_name_th, conf.resort_name_en) }}{% endblock %}
+{% block desc %}{{ tt('ติดต่อโกลเด้น บีช รีสอร์ท นาจอมเทียน พัทยา เบอร์โทร แผนที่ เส้นทางจากถนนนาจอมเทียน ซอย 10 พิกัด GPS', 'Contact Golden Beach Resort, Na Jomtien, Pattaya: phone, map, directions from Na Jomtien Soi 10 and GPS.') }}{% endblock %}
+{% block main %}
+<div class="page-top">
+  <div class="wrap">
+    <h1>{{ tt('ติดต่อเรา', 'Contact us') }}</h1>
+    <p>{{ tt(conf.address_th, conf.address_en) }}</p>
+  </div>
+</div>
+<section style="padding-top:48px">
+  <div class="wrap dir">
+    <div>
+      <h2 style="font-size:28px">{{ tt('โทรจองหรือสอบถาม', 'Call or message') }}</h2>
+      <dl class="kv" style="margin-bottom:28px">
+        <dt>{{ tt(conf.phone_main_label, 'Resort') }}</dt><dd><a href="tel:{{ conf.phone_main|replace('-','') }}">{{ conf.phone_main }}</a></dd>
+        {% if conf.phone_alt %}<dt>{{ conf.phone_alt_label }}</dt><dd><a href="tel:{{ conf.phone_alt|replace('-','') }}">{{ conf.phone_alt }}</a></dd>{% endif %}
+        {% if conf.line_oa_id %}<dt>LINE</dt><dd>{{ conf.line_oa_id }}</dd>{% endif %}
+        {% if conf.email %}<dt>{{ tt('อีเมล', 'E-mail') }}</dt><dd><a href="mailto:{{ conf.email }}">{{ conf.email }}</a></dd>{% endif %}
+        <dt>Facebook</dt><dd><a href="{{ conf.facebook_url }}" target="_blank" rel="noopener">{{ conf.facebook_name }}</a></dd>
+        <dt>{{ tt('พิกัด', 'GPS') }}</dt><dd>{{ conf.lat }}, {{ conf.lng }}</dd>
+      </dl>
+      <h2 style="font-size:28px" id="form">{{ tt('ฝากข้อความ', 'Send a message') }}</h2>
+      <form method="post" action="{{ L }}/inquiry">
+        <input type="hidden" name="kind" value="contact"><input type="hidden" name="back" value="/contact">
+        <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div class="grid2">
+          <div class="field"><label for="c-n">{{ tt('ชื่อ', 'Name') }}</label><input id="c-n" name="name" required></div>
+          <div class="field"><label for="c-p">{{ tt('เบอร์โทร', 'Phone') }}</label><input id="c-p" name="phone" type="tel"></div>
+        </div>
+        <div class="field"><label for="c-e">{{ tt('อีเมล', 'E-mail') }}</label><input id="c-e" name="email" type="email"></div>
+        <div class="field"><label for="c-m">{{ tt('ข้อความ', 'Message') }}</label><textarea id="c-m" name="message" required></textarea></div>
+        <button class="btn" type="submit">{{ tt('ส่งข้อความ', 'Send message') }}</button>
+      </form>
+    </div>
+    <div id="map">
+      <div class="dir__map" style="margin-bottom:18px">{% include "partials/routemap.html" %}</div>
+      <iframe title="{{ tt('แผนที่ Google', 'Google map') }}" src="https://maps.google.com/maps?q={{ conf.lat }},{{ conf.lng }}&z=17&output=embed" style="width:100%;aspect-ratio:4/3;border:0;border-radius:10px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      <div class="btns" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+        <a class="btn btn--gulf" href="https://www.google.com/maps/dir/?api=1&destination={{ conf.lat }},{{ conf.lng }}" target="_blank" rel="noopener">{{ tt('นำทางด้วย Google Maps', 'Directions in Google Maps') }}</a>
+        <a class="btn btn--ghost" href="https://waze.com/ul?ll={{ conf.lat }},{{ conf.lng }}&navigate=yes" target="_blank" rel="noopener">Waze</a>
+      </div>
+      <p class="small muted" style="margin-top:14px">{{ tt(conf.directions_th, conf.directions_en) }}</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

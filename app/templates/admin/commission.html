@@ -1,0 +1,22 @@
+{% extends "admin/base.html" %}
+{% block title %}กฎค่าคอมมิชชั่น{% endblock %}
+{% block heading %}กฎค่าคอมมิชชั่น{% endblock %}
+{% block content %}
+<p class="muted" style="max-width:60em">เมื่อการจองชำระครบ ระบบแยกยอดเป็น 3 ส่วน: ค่าธรรมเนียมแพลตฟอร์ม (เช่น Airbnb), ค่าคอมของแอดมินผู้ปิดการขาย และรายได้รีสอร์ท ค่าคอมเข้ากระเป๋าแอดมินทันที และถูกหักคืนอัตโนมัติถ้ายกเลิก การแก้กฎมีผลกับการจองที่ชำระหลังจากนี้เท่านั้น</p>
+<form method="post" action="/admin/commission" class="panel panel--flush">
+  <div class="t-wrap"><table class="t">
+    <thead><tr><th>ช่องทาง</th><th>วิธีคิด</th><th>% ของยอดสุทธิ</th><th>คงที่ หลังใหญ่/คืน</th><th>คงที่ หลังเล็ก/คืน</th><th>ค่าธรรมเนียมแพลตฟอร์ม %</th><th>เข้ากองกลาง</th></tr></thead>
+    <tbody>{% for ch in channels %}{% set r = rules.get(ch) %}
+      <tr><td><b>{{ CHANNELS[ch][0] }}</b></td>
+        <td><select name="{{ ch }}_mode"><option value="percent" {% if r and r.mode=='percent' %}selected{% endif %}>เปอร์เซ็นต์</option><option value="fixed" {% if r and r.mode=='fixed' %}selected{% endif %}>เรทคงที่</option><option value="none" {% if not r or r.mode=='none' %}selected{% endif %}>ไม่คิดค่าคอม</option></select></td>
+        <td><input name="{{ ch }}_percent" value="{{ '%g'|format(r.percent|float) if r else 0 }}" style="width:90px"></td>
+        <td><input name="{{ ch }}_fixed_big" value="{{ '%g'|format(r.fixed_big|float) if r else 0 }}" style="width:100px"></td>
+        <td><input name="{{ ch }}_fixed_small" value="{{ '%g'|format(r.fixed_small|float) if r else 0 }}" style="width:100px"></td>
+        <td><input name="{{ ch }}_platform_fee_percent" value="{{ '%g'|format(r.platform_fee_percent|float) if r else 0 }}" style="width:90px"></td>
+        <td><input type="checkbox" name="{{ ch }}_to_pool" value="1" {% if r and r.to_pool %}checked{% endif %} aria-label="เข้ากองกลาง"></td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+  <div style="padding:16px 20px">{% if user.role == 'owner' %}<button class="btn">บันทึกกฎ</button>{% else %}<span class="muted">เฉพาะเจ้าของแก้กฎได้</span>{% endif %}</div>
+</form>
+<div class="panel"><h3>ตัวอย่าง</h3><p style="margin:0">แอดมินฟ้าปิดการขายบ้านดอกลีลาวดี 2 คืน ยอด 6,000 บาท ผ่าน Facebook (10%) ระบบบันทึกค่าคอม 600 บาทเข้ากระเป๋าแอดมินฟ้า รายได้รีสอร์ท 5,400 บาท และส่ง LINE ส่วนตัวแจ้งยอดให้แอดมินฟ้าทันที</p></div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "public/base.html" %}
+{% block title %}{{ tt('คำถามที่พบบ่อย ราคา อาหารเช้า สัตว์เลี้ยง การเดินทาง | โกลเด้น บีช รีสอร์ท นาจอมเทียน', 'FAQ: prices, breakfast, pets, directions | Golden Beach Resort Na Jomtien') }}{% endblock %}
+{% block desc %}{{ tt('ตอบทุกคำถามก่อนจองโกลเด้น บีช รีสอร์ท นาจอมเทียน พัทยา ราคาบ้านพัก อาหารเช้า สัตว์เลี้ยง เวลาเช็คอิน การจัดเตียง ที่จอดรถ ปิ้งย่าง และเหมารีสอร์ท', 'Answers before you book Golden Beach Resort, Na Jomtien: prices, breakfast, pets, check-in times, beds, parking, BBQ and whole-resort buyouts.') }}{% endblock %}
+{% block head %}<script type="application/ld+json">{{ faq_ld|tojs }}</script>{% endblock %}
+{% block main %}
+<div class="page-top">
+  <div class="wrap">
+    <h1>{{ tt('คำถามที่พบบ่อย', 'Frequently asked questions') }}</h1>
+    <p>{{ tt('ข้อมูลในหน้านี้ดึงจากระบบจองโดยตรง ราคาและเงื่อนไขจึงเป็นปัจจุบันเสมอ', 'Everything here comes straight from the booking system, so prices and terms are always current.') }}</p>
+  </div>
+</div>
+<div class="wrap faq" style="padding:40px var(--gutter) 90px">
+  <div class="faq__grid">
+    <div>
+      {% for q, a in items %}
+      <section class="faq__item" id="q{{ loop.index }}">
+        <h2>{{ q }}</h2>
+        <p>{{ a }}</p>
+      </section>
+      {% endfor %}
+    </div>
+    <aside class="faq__facts" aria-label="{{ tt('ข้อมูลโดยย่อ', 'Quick facts') }}">
+      <h2>{{ tt('ข้อมูลโดยย่อ', 'Quick facts') }}</h2>
+      <dl class="kv" style="grid-template-columns:110px 1fr">
+        <dt>{{ tt('ชื่อ', 'Name') }}</dt><dd>{{ conf.resort_name_th }} ({{ conf.resort_name_en }})</dd>
+        <dt>{{ tt('ที่ตั้ง', 'Location') }}</dt><dd>{{ tt(conf.address_th, conf.address_en) }}</dd>
+        <dt>{{ tt('โทร', 'Phone') }}</dt><dd><a href="tel:{{ conf.phone_main|replace('-','') }}">{{ conf.phone_main }}</a></dd>
+        <dt>{{ tt('เช็คอิน', 'Check-in') }}</dt><dd>{{ conf.checkin_time }}</dd>
+        <dt>{{ tt('เช็คเอาท์', 'Check-out') }}</dt><dd>{{ conf.checkout_time }}</dd>
+        <dt>{{ tt('พิกัด', 'GPS') }}</dt><dd>{{ conf.lat }}, {{ conf.lng }}</dd>
+      </dl>
+      <a class="btn btn--block" href="{{ L }}/book" style="margin-top:18px">{{ tt('จองบ้านพัก', 'Book a house') }}</a>
+    </aside>
+  </div>
+</div>
+{% endblock %}

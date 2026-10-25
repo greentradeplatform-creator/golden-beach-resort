@@ -1,0 +1,38 @@
+{% extends "admin/base.html" %}
+{% block title %}รายการจอง{% endblock %}
+{% block heading %}รายการจอง{% endblock %}
+{% block content %}
+<form class="panel" method="get" style="display:grid;grid-template-columns:2fr repeat(5,1fr) auto;gap:10px;align-items:end">
+  <div><label>ค้นหา</label><input name="q" value="{{ f.q }}" placeholder="เลขจอง ชื่อ เบอร์โทร บ้าน"></div>
+  <div><label>สถานะ</label><select name="status"><option value="">ทั้งหมด</option><option value="active" {% if f.status=='active' %}selected{% endif %}>ยังไม่จบ</option>
+    {% for k, v in STATUS_TH.items() %}<option value="{{ k }}" {% if f.status==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></div>
+  <div><label>ช่องทาง</label><select name="channel"><option value="">ทั้งหมด</option>{% for c in channels %}<option value="{{ c }}" {% if f.channel==c %}selected{% endif %}>{{ CHANNELS[c][0] }}</option>{% endfor %}</select></div>
+  <div><label>ผู้ปิดการขาย</label><select name="agent"><option value="">ทุกคน</option>{% for a in agents %}<option value="{{ a.id }}" {% if f.agent==a.id|string %}selected{% endif %}>{{ a.display_name }}</option>{% endfor %}</select></div>
+  <div><label>เข้าพักตั้งแต่</label><input type="date" name="frm" value="{{ f.frm }}"></div>
+  <div><label>ถึง</label><input type="date" name="to" value="{{ f.to }}"></div>
+  <button class="btn">กรอง</button>
+</form>
+<style>@media (max-width: 1100px) { form.panel { grid-template-columns: 1fr 1fr !important; } }</style>
+
+<div class="panel panel--flush">
+  <div class="t-wrap"><table class="t">
+    <thead><tr><th>เลขจอง</th><th>บ้าน</th><th>เข้าพัก</th><th>คืน</th><th>ลูกค้า</th><th>ช่องทาง</th><th>ผู้ปิดการขาย</th><th>สถานะ</th><th class="num">ยอดรวม</th><th class="num">ชำระแล้ว</th></tr></thead>
+    <tbody>
+    {% for b in rows %}
+      <tr class="is-link" data-href="/admin/bookings/{{ b.id }}">
+        <td><a href="/admin/bookings/{{ b.id }}">{{ b.code }}</a>{% if b.group_ref %}<br><span class="small muted">เหมา {{ b.group_ref }}</span>{% endif %}</td>
+        <td>{{ b.house.name_th }}</td>
+        <td class="nowrap">{{ thai_date(b.check_in) }}</td><td>{{ b.nights }}</td>
+        <td>{{ b.customer.name }}<br><span class="small muted">{{ fmt_phone(b.customer.phone) }}</span></td>
+        <td class="ch">{{ CHANNELS[b.channel][0] }}</td>
+        <td class="ch">{{ b.agent.display_name if b.agent else 'เว็บไซต์' }}</td>
+        <td><span class="st st--{{ b.status }}">{{ STATUS_TH[b.status] }}</span></td>
+        <td class="num">{{ money(b.total) }}</td><td class="num">{{ money(b.amount_paid) }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="10" class="empty" style="padding:24px">ไม่พบรายการตามเงื่อนไขนี้</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}

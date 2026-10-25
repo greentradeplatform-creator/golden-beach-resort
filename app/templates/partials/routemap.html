@@ -1,0 +1,37 @@
+{# Redrawn from the resort's own direction sketch: Na Jomtien Soi 10 → right at Soi 2 → resort road #}
+<svg viewBox="0 0 640 400" role="img" aria-labelledby="rm-t">
+  <title id="rm-t">{{ tt('แผนที่เส้นทาง: จากถนนนาจอมเทียน เข้าซอย 10 เลี้ยวขวาเข้าซอยที่ 2 ถึงทางเข้ารีสอร์ท', 'Route: Na Jomtien Soi 10, right into Soi 2, then the resort road') }}</title>
+  <defs>
+    <marker id="rm-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="#9A5A2E"/></marker>
+  </defs>
+  <rect width="640" height="400" fill="#FBF8F2"/>
+  <path d="M0 0h640v58c-27 0-27 10-53 10s-27-10-53-10-27 10-53 10-27-10-53-10-27 10-53 10-27-10-53-10-27 10-53 10-27-10-53-10-27 10-53 10-27-10-53-10-27 10-53 10S27 58 0 58Z" fill="#2C6E80"/>
+  <text x="24" y="38" fill="#fff" font-family="Chonburi, serif" font-size="20">{{ tt('ทะเลนาจอมเทียน', 'Na Jomtien beach') }}</text>
+  <path d="M0 70h640v14H0z" fill="#EADFC9"/>
+  <!-- roads -->
+  <g fill="none" stroke="#D9D2C6" stroke-width="22" stroke-linecap="square">
+    <path d="M165 112v120"/>          <!-- resort road -->
+    <path d="M40 232h520"/>            <!-- soi 2 -->
+    <path d="M560 96v290"/>            <!-- soi 10 -->
+    <path d="M40 350h600"/>            <!-- main road -->
+    <path d="M440 120v112"/>
+  </g>
+  <!-- resort -->
+  <rect x="70" y="94" width="190" height="46" rx="6" fill="#2E1D12"/>
+  <text x="165" y="123" text-anchor="middle" fill="#C8A24A" font-family="Chonburi, serif" font-size="17">{{ tt('โกลเด้น บีช รีสอร์ท', 'Golden Beach Resort') }}</text>
+  <rect x="210" y="160" width="150" height="54" rx="4" fill="#fff" stroke="#CFC6B8"/>
+  <text x="285" y="192" text-anchor="middle" fill="#57504A" font-size="14" font-family="Plex Looped, sans-serif">{{ tt('ลานจอดรถรีสอร์ท', 'Resort car park') }}</text>
+  <circle cx="470" cy="128" r="9" fill="#F2B8A6"/>
+  <text x="486" y="133" fill="#57504A" font-size="13" font-family="Plex Looped, sans-serif">The Glass House</text>
+  <!-- labels -->
+  <text x="60" y="262" fill="#57504A" font-size="14" font-family="Plex Looped, sans-serif">{{ tt('ซอยที่ 2', 'Soi 2') }}</text>
+  <text x="596" y="300" fill="#57504A" font-size="14" font-family="Plex Looped, sans-serif" transform="rotate(-90 596 300)">{{ tt('นาจอมเทียน ซอย 10', 'Na Jomtien Soi 10') }}</text>
+  <text x="60" y="380" fill="#57504A" font-size="14" font-family="Plex Looped, sans-serif">{{ tt('ถนนสายหลัก', 'Main road') }}</text>
+  <g font-family="Plex Looped, sans-serif" font-size="12" font-weight="600">
+    <rect x="300" y="330" width="34" height="18" rx="3" fill="#2E7D32"/><text x="317" y="343" text-anchor="middle" fill="#fff">PT</text>
+    <rect x="430" y="330" width="44" height="18" rx="3" fill="#F2C230"/><text x="452" y="343" text-anchor="middle" fill="#B71C1C">Shell</text>
+  </g>
+  <!-- route -->
+  <path d="M560 384V232H165v-82" fill="none" stroke="#9A5A2E" stroke-width="4" stroke-dasharray="10 8" marker-end="url(#rm-a)"/>
+  <circle cx="560" cy="384" r="7" fill="#9A5A2E"/>
+</svg>

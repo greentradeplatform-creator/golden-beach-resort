@@ -1,0 +1,58 @@
+{% extends "admin/base.html" %}
+{% block title %}รายงาน{% endblock %}
+{% block heading %}รายงาน{% endblock %}
+{% block content %}
+<form class="head-row" method="get">
+  <div class="actions" style="align-items:end">
+    <div><label>เข้าพักตั้งแต่</label><input type="date" name="frm" value="{{ d1 }}"></div>
+    <div><label>ถึง</label><input type="date" name="to" value="{{ d2 }}"></div>
+    <button class="btn">ดูรายงาน</button>
+  </div>
+  <a class="btn btn--ghost" href="/admin/reports.csv?frm={{ d1 }}&to={{ d2 }}">ดาวน์โหลด CSV (เปิดใน Excel)</a>
+</form>
+
+<dl class="figs">
+  <div><dt>ยอดจองที่ยืนยันแล้ว</dt><dd>{{ money(total) }}</dd></div>
+  <div><dt>รายได้รีสอร์ทสุทธิ</dt><dd>{{ money(resort) }}</dd></div>
+  <div><dt>ค่าคอมแอดมิน</dt><dd>{{ money(comm) }}</dd></div>
+  <div><dt>ค่าธรรมเนียมแพลตฟอร์ม</dt><dd>{{ money(fee) }}</dd></div>
+  <div><dt>คืนที่ขายได้ / อัตราเข้าพัก</dt><dd>{{ nights_sold }} <span style="font-size:.6em">({{ '%.0f'|format(occ) }}%)</span></dd></div>
+  <div><dt>ยกเลิก/ไม่มา/หมดเวลา</dt><dd>{{ cancelled }}</dd></div>
+</dl>
+
+<div class="cols">
+  <div class="panel">
+    <h2>ลูกค้ามาจากช่องทางไหน</h2>
+    <p class="small muted">ดูว่าควรยิงโฆษณาหรือเน้นช่องทางไหน</p>
+    {% set mx = (by_ch.values()|map(attribute='total')|max) if by_ch else 1 %}
+    <div class="bars">
+      {% for ch, v in by_ch.items()|sort(attribute='1.total', reverse=true) %}
+      <span>{{ CHANNELS[ch][0] }}</span><div class="bar" style="width:{{ (v.total / (mx or 1) * 100)|round(1) }}%"></div><span class="num">{{ money(v.total) }} <span class="muted">({{ v.n }})</span></span>
+      {% else %}<span class="empty">ยังไม่มีข้อมูล</span>{% endfor %}
+    </div>
+  </div>
+  <div class="panel">
+    <h2>รายได้ 12 เดือน (ตามเดือนเข้าพัก)</h2>
+    {% set mm = (by_month.values()|max) if by_month else 1 %}
+    <div class="trend" style="margin-bottom:28px">
+      {% for m, v in by_month.items() %}<div style="height:{{ (v / (mm or 1) * 100)|round(1) }}%" title="{{ m }}: {{ money(v) }} บาท"><span>{{ m[5:] }}/{{ (m[:4]|int + 543) % 100 }}</span></div>{% else %}<p class="empty">ยังไม่มีข้อมูล</p>{% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="cols">
+  <div class="panel panel--flush">
+    <div class="panel__head" style="padding:16px 20px 0"><h2>ผลงานแอดมิน</h2></div>
+    <table class="t"><thead><tr><th>ผู้ปิดการขาย</th><th class="num">เคส</th><th class="num">ยอดจอง</th><th class="num">ค่าคอม</th></tr></thead><tbody>
+      {% for a, v in by_agent.items()|sort(attribute='1.total', reverse=true) %}<tr><td>{{ a }}</td><td class="num">{{ v.n }}</td><td class="num">{{ money(v.total) }}</td><td class="num">{{ money(v.comm) }}</td></tr>{% else %}<tr><td colspan="4" class="empty">ยังไม่มีข้อมูล</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+  <div class="panel panel--flush">
+    <div class="panel__head" style="padding:16px 20px 0"><h2>แยกตามบ้าน</h2></div>
+    <table class="t"><thead><tr><th>บ้าน</th><th class="num">การจอง</th><th class="num">คืน</th><th class="num">ยอด</th></tr></thead><tbody>
+      {% for h, v in by_house.items()|sort(attribute='1.total', reverse=true) %}<tr><td>{{ h }}</td><td class="num">{{ v.n }}</td><td class="num">{{ v.nights }}</td><td class="num">{{ money(v.total) }}</td></tr>{% else %}<tr><td colspan="4" class="empty">ยังไม่มีข้อมูล</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+</div>
+<p class="small muted">บริการเสริมในช่วงนี้รวม {{ money(addons) }} บาท</p>
+{% endblock %}

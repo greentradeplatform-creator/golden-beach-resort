@@ -1,0 +1,97 @@
+{% extends "admin/base.html" %}
+{% block title %}โปรโมชั่น{% endblock %}
+{% block heading %}โปรโมชั่นและบริการเสริม{% endblock %}
+{% block content %}
+{% set KIND_TH = {'weekday_discount':'ลดเฉพาะคืนที่กำหนด (เช่นวันธรรมดา)','nth_night_discount':'ลดคืนที่ N','percent_discount':'ลดเป็น %','gift':'ของแถม','loyalty':'สะสมครั้ง ครั้งที่ N ลด %'} %}
+{% set DOW = [('0','จ'),('1','อ'),('2','พ'),('3','พฤ'),('4','ศ'),('5','ส'),('6','อา')] %}
+<p class="muted">โปรที่เปิดอยู่ถูกคำนวณอัตโนมัติทั้งตอนลูกค้าจองบนเว็บและตอนแอดมินสร้างการจอง โปรที่ "ใช้ร่วมได้" จะรวมกัน ส่วนโปรที่ใช้ร่วมไม่ได้ ระบบเลือกแบบที่ลูกค้าได้ประโยชน์มากที่สุด</p>
+
+{% macro promo_form(p, pid) %}
+<form method="post" action="/admin/promotions/{{ pid }}">
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px">
+    <div class="field"><label>ชื่อโปร (ไทย)</label><input name="name_th" value="{{ p.name_th if p else '' }}" required></div>
+    <div class="field"><label>ประเภท</label><select name="kind">{% for k, v in KIND_TH.items() %}<option value="{{ k }}" {% if p and p.kind==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></div>
+  </div>
+  <div class="field"><label>ชื่อโปร (อังกฤษ)</label><input name="name_en" value="{{ p.name_en if p else '' }}"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div class="field"><label>รายละเอียด/เงื่อนไข (ไทย)</label><textarea name="detail_th" style="min-height:70px">{{ p.detail_th if p else '' }}</textarea></div>
+    <div class="field"><label>รายละเอียด (อังกฤษ)</label><textarea name="detail_en" style="min-height:70px">{{ p.detail_en if p else '' }}</textarea></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+    <div class="field"><label>ลด (บาท)</label><input name="amount" inputmode="decimal" value="{{ '%.0f'|format(p.amount|float) if p else 0 }}"></div>
+    <div class="field"><label>ลด (%)</label><input name="percent" inputmode="decimal" value="{{ '%.0f'|format(p.percent|float) if p else 0 }}"></div>
+    <div class="field"><label>คืนที่ / ครั้งที่ N</label><input name="nth" type="number" min="0" value="{{ p.nth if p else 0 }}"></div>
+    <div class="field"><label>พักขั้นต่ำ (คืน)</label><input name="min_nights" type="number" min="1" value="{{ p.min_nights if p else 1 }}"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+    <div class="field"><label>เริ่ม</label><input type="date" name="start_date" value="{{ p.start_date or '' if p else '' }}"></div>
+    <div class="field"><label>สิ้นสุด</label><input type="date" name="end_date" value="{{ p.end_date or '' if p else '' }}"></div>
+    <div class="field"><label>นับช่วงวันจาก</label><select name="window_on"><option value="stay" {% if not p or p.window_on=='stay' %}selected{% endif %}>วันเข้าพัก</option><option value="booking" {% if p and p.window_on=='booking' %}selected{% endif %}>วันที่จอง</option></select></div>
+  </div>
+  <div class="field"><label>คืนที่ได้ส่วนลด (สำหรับโปรลดเฉพาะคืน)</label><div class="chk-row">{% for v, l in DOW %}<label><input type="checkbox" name="weekdays" value="{{ v }}" {% if not p or v in p.weekdays.split(',') %}checked{% endif %}> คืนวัน{{ l }}</label>{% endfor %}</div></div>
+  <div class="field"><label>ใช้กับบ้าน</label><div class="chk-row">{% for k, v in KINDS.items() %}<label><input type="checkbox" name="house_kinds" value="{{ k }}" {% if not p or k in p.house_kinds.split(',') %}checked{% endif %}> {{ v[0] }}</label>{% endfor %}</div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div class="field"><label>ของแถม (ไทย)</label><input name="gift_th" value="{{ p.gift_th if p else '' }}"></div>
+    <div class="field"><label>ของแถม (อังกฤษ)</label><input name="gift_en" value="{{ p.gift_en if p else '' }}"></div>
+  </div>
+  <div class="chk-row" style="margin-bottom:14px">
+    <label><input type="checkbox" name="active" value="1" {% if not p or p.active %}checked{% endif %}> เปิดใช้</label>
+    <label><input type="checkbox" name="stackable" value="1" {% if not p or p.stackable %}checked{% endif %}> ใช้ร่วมกับโปรอื่นได้</label>
+    <label><input type="checkbox" name="show_on_site" value="1" {% if not p or p.show_on_site %}checked{% endif %}> แสดงบนเว็บไซต์</label>
+    <label><input type="checkbox" name="same_channel" value="1" {% if p and p.same_channel %}checked{% endif %}> สะสมแต้ม: ต้องจองช่องทางเดิม</label>
+  </div>
+  <input type="hidden" name="sort" value="{{ p.sort if p else 9 }}">
+  <div class="actions"><button class="btn">บันทึก</button>{% if p %}<button class="btn btn--ghost" name="delete" value="1" onclick="return confirm('ลบโปรนี้?')">ลบ</button>{% endif %}</div>
+</form>
+{% endmacro %}
+
+{% for p in promos %}
+<details class="panel" {% if loop.first %}open{% endif %}>
+  <summary style="cursor:pointer;display:flex;justify-content:space-between;gap:12px;align-items:center">
+    <span><b>{{ p.name_th }}</b> <span class="small muted">{{ KIND_TH[p.kind] }}</span></span>
+    {% if p.active %}<span class="st st--completed">เปิดอยู่</span>{% else %}<span class="st st--cancelled">ปิด</span>{% endif %}
+  </summary>
+  <div style="margin-top:14px">{{ promo_form(p, p.id) }}</div>
+</details>
+{% endfor %}
+<details class="panel"><summary style="cursor:pointer"><b>+ เพิ่มโปรโมชั่นใหม่</b></summary><div style="margin-top:14px">{{ promo_form(none, 0) }}</div></details>
+
+<div class="cols" style="margin-top:28px">
+  <div class="panel" id="addons">
+    <h2>บริการเสริม</h2>
+    <table class="t" style="margin-bottom:12px"><thead><tr><th>รายการ</th><th class="num">ราคา</th><th>คิดต่อ</th><th></th></tr></thead><tbody>
+      {% for a in addons %}<tr><td colspan="4" style="padding:6px 0">
+        <form method="post" action="/admin/addons/{{ a.id }}" style="display:grid;grid-template-columns:2fr 1fr 1fr auto auto;gap:8px;align-items:center">
+          <input name="name_th" value="{{ a.name_th }}" aria-label="ชื่อ"><input type="hidden" name="name_en" value="{{ a.name_en }}">
+          <input name="price" value="{{ '%.0f'|format(a.price|float) }}" aria-label="ราคา">
+          <select name="unit" aria-label="คิดต่อ"><option value="stay" {% if a.unit=='stay' %}selected{% endif %}>การเข้าพัก</option><option value="night" {% if a.unit=='night' %}selected{% endif %}>คืน</option><option value="person" {% if a.unit=='person' %}selected{% endif %}>คน</option></select>
+          <label class="check" style="margin:0"><input type="checkbox" name="active" value="1" {% if a.active %}checked{% endif %}> เปิด</label>
+          <button class="btn btn--ghost btn--sm">บันทึก</button>
+        </form></td></tr>{% endfor %}
+    </tbody></table>
+    <form method="post" action="/admin/addons/0" style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:end">
+      <div><label>เพิ่มรายการ</label><input name="name_th" placeholder="เช่น เตียงเสริม" required></div>
+      <div><label>ราคา</label><input name="price" required></div>
+      <div><label>คิดต่อ</label><select name="unit"><option value="stay">การเข้าพัก</option><option value="night">คืน</option><option value="person">คน</option></select></div>
+      <input type="hidden" name="active" value="1"><button class="btn">เพิ่ม</button>
+    </form>
+  </div>
+
+  <div class="panel" id="buyout">
+    <h2>แพ็กเกจเหมาทั้งรีสอร์ท</h2>
+    <form method="post" action="/admin/buyout">
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px">
+        <div class="field"><label>ชื่อแพ็กเกจ</label><input name="name_th" value="{{ pkg.name_th if pkg else '' }}"></div>
+        <div class="field"><label>ราคา/คืน</label><input name="price" value="{{ '%.0f'|format(pkg.price|float) if pkg else '' }}"></div>
+        <div class="field"><label>จำนวนคน</label><input name="guests" type="number" value="{{ pkg.guests if pkg else 40 }}"></div>
+      </div>
+      <input type="hidden" name="name_en" value="{{ pkg.name_en if pkg else '' }}">
+      <div class="field"><label>สิ่งที่ได้ (บรรทัดละรายการ)</label><textarea name="includes_th">{{ pkg.includes_th if pkg else '' }}</textarea></div>
+      <div class="field"><label>สิ่งที่ได้ ภาษาอังกฤษ</label><textarea name="includes_en">{{ pkg.includes_en if pkg else '' }}</textarea></div>
+      <div class="field"><label>หมายเหตุ</label><input name="note_th" value="{{ pkg.note_th if pkg else '' }}"><input type="hidden" name="note_en" value="{{ pkg.note_en if pkg else '' }}"></div>
+      <label class="check" style="margin-bottom:12px"><input type="checkbox" name="active" value="1" {% if not pkg or pkg.active %}checked{% endif %}> แสดงบนเว็บไซต์</label>
+      <button class="btn">บันทึกแพ็กเกจ</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

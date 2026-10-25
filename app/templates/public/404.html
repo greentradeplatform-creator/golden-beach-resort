@@ -1,0 +1,9 @@
+{% extends "public/base.html" %}
+{% block robots %}noindex, follow{% endblock %}
+{% block main %}
+<div class="wrap" style="padding:90px var(--gutter);max-width:640px">
+  <h1>{{ tt('ไม่พบหน้านี้', 'Page not found') }}</h1>
+  <p class="lede">{{ tt('ลิงก์อาจเปลี่ยนไปแล้ว ลองดูบ้านพักทั้งหมดหรือกลับหน้าแรก', 'The link may have changed. Try the house list or go back home.') }}</p>
+  <a class="btn" href="{{ L }}/houses">{{ tt('ดูบ้านพักทั้งหมด', 'See all houses') }}</a> <a class="btn btn--ghost" href="{{ L }}/">{{ tt('หน้าแรก', 'Home') }}</a>
+</div>
+{% endblock %}

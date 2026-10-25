@@ -1,0 +1,90 @@
+{% extends "admin/base.html" %}
+{% block title %}ตั้งค่าระบบ{% endblock %}
+{% block heading %}ตั้งค่าระบบ{% endblock %}
+{% block content %}
+{% macro f(key, label, type='text', hint='') %}<div class="field"><label for="s-{{ key }}">{{ label }}</label>{% if type == 'area' %}<textarea id="s-{{ key }}" name="{{ key }}">{{ s[key] }}</textarea>{% else %}{% if type == 'password' %}<input id="s-{{ key }}" name="{{ key }}" type="password" value="" autocomplete="new-password" placeholder="{{ 'บันทึกไว้แล้ว เว้นว่าง = ใช้ค่าเดิม, พิมพ์ - เพื่อลบ' if s[key] else 'ยังไม่ได้ตั้ง' }}">{% else %}<input id="s-{{ key }}" name="{{ key }}" type="{{ type }}" value="{{ s[key] }}">{% endif %}{% endif %}{% if hint %}<div class="small muted">{{ hint }}</div>{% endif %}</div>{% endmacro %}
+{% macro chk(key, label, hint='') %}<label class="check"><input type="checkbox" name="{{ key }}" value="1" {% if s[key]=='1' %}checked{% endif %}> <span>{{ label }}{% if hint %}<br><span class="small muted">{{ hint }}</span>{% endif %}</span></label>{% endmacro %}
+<form method="post" action="/admin/settings">
+<div class="cols">
+  <div class="panel"><h2>ข้อมูลรีสอร์ท</h2>
+    {{ f('resort_name_th', 'ชื่อภาษาไทย') }}{{ f('resort_name_en', 'ชื่อภาษาอังกฤษ') }}
+    {{ f('address_th', 'ที่อยู่ (ไทย)') }}{{ f('address_en', 'ที่อยู่ (อังกฤษ)') }}
+    {{ f('directions_th', 'วิธีเดินทาง (ไทย)', 'area') }}{{ f('directions_en', 'วิธีเดินทาง (อังกฤษ)', 'area') }}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">{{ f('lat', 'ละติจูด') }}{{ f('lng', 'ลองจิจูด') }}</div>
+  </div>
+  <div class="panel"><h2>ช่องทางติดต่อ</h2>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px">{{ f('phone_main', 'เบอร์หลัก') }}{{ f('phone_main_label', 'ชื่อกำกับ') }}{{ f('phone_alt', 'เบอร์สำรอง') }}{{ f('phone_alt_label', 'ชื่อกำกับ') }}</div>
+    {{ f('email', 'อีเมลรีสอร์ท', 'email') }}{{ f('line_oa_id', 'LINE OA ID', hint='เช่น @goldenbeach') }}
+    {{ f('facebook_name', 'ชื่อเพจ Facebook') }}{{ f('facebook_url', 'ลิงก์เพจ Facebook') }}
+  </div>
+  <div class="panel"><h2>การชำระเงิน</h2>
+    {{ f('bank_name', 'ธนาคาร') }}{{ f('bank_account_no', 'เลขบัญชี') }}{{ f('bank_account_name', 'ชื่อบัญชี') }}
+    {{ f('promptpay_id', 'เลขพร้อมเพย์ (เบอร์มือถือ หรือเลขผู้เสียภาษี 13 หลัก)', hint='ใส่แล้วหน้าชำระเงินจะแสดง QR พร้อมยอดเงินอัตโนมัติ') }}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">{{ f('deposit_percent', 'ต้องชำระกี่ % ของยอด', 'number') }}{{ f('hold_hours', 'กันห้องรอชำระ (ชั่วโมง)', 'number') }}</div>
+    <div class="field"><label>รูปแบบการจองบนเว็บไซต์</label><select name="booking_mode">
+      <option value="approval" {% if s.booking_mode=='approval' %}selected{% endif %}>B: ลูกค้าส่งคำขอ แอดมินยืนยันก่อนชำระ</option>
+      <option value="instant" {% if s.booking_mode=='instant' %}selected{% endif %}>A: กันห้องทันที ลูกค้าชำระและแนบสลิปเอง</option></select></div>
+  </div>
+  <div class="panel"><h2>การเข้าพัก</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">{{ f('checkin_time', 'เวลาเช็คอิน') }}{{ f('checkout_time', 'เวลาเช็คเอาท์') }}</div>
+    <label class="check"><input type="checkbox" name="breakfast_included" value="1" {% if s.breakfast_included=='1' %}checked{% endif %}> รวมอาหารเช้า</label>
+    <label class="check" style="margin-bottom:14px"><input type="checkbox" name="pets_allowed" value="1" {% if s.pets_allowed=='1' %}checked{% endif %}> สัตว์เลี้ยงเข้าพักได้</label>
+    {{ f('house_rules_th', 'กฎของบ้าน (บรรทัดละข้อ)', 'area') }}{{ f('house_rules_en', 'กฎของบ้าน (อังกฤษ)', 'area') }}
+    {{ f('cancel_policy_th', 'นโยบายยกเลิก (บรรทัดละข้อ)', 'area') }}{{ f('cancel_policy_en', 'นโยบายยกเลิก (อังกฤษ)', 'area') }}
+  </div>
+  <div class="panel"><h2>แจ้งเตือน LINE</h2>
+    <p class="small muted">LINE Notify ปิดบริการแล้ว ระบบใช้ LINE Messaging API ของ LINE OA รีสอร์ท: สร้าง Channel ใน LINE Developers, คัดลอก Channel access token มาใส่ เชิญบอทเข้ากลุ่มแอดมินแล้วใส่ Group ID</p>
+    {{ f('line_channel_token', 'Channel access token', 'password') }}{{ f('line_channel_secret', 'Channel secret', 'password', hint='ตั้ง Webhook URL ใน LINE Developers เป็น ' ~ base_url ~ '/line/webhook แล้วเชิญบอทเข้ากลุ่ม ระบบจะใส่ Group ID ให้เอง') }}{{ f('line_group_id', 'Group ID กลุ่มแอดมิน') }}
+  </div>
+  <div class="panel"><h2>SEO และสถิติ</h2>
+    <p class="small muted">ยืนยันเว็บไซต์กับ Google Search Console และ Bing Webmaster Tools (ใช้กับ ChatGPT search และ Copilot ด้วย) โดยคัดลอกเฉพาะค่า content ของ meta tag มาใส่</p>
+    {{ f('google_site_verification', 'Google Search Console verification') }}{{ f('bing_site_verification', 'Bing Webmaster verification') }}
+    {{ f('ga4_id', 'Google Analytics 4 Measurement ID', hint='เช่น G-XXXXXXXXXX เว้นว่างถ้าไม่ใช้') }}
+  </div>
+  <div class="panel"><h2>อีเมล</h2>
+    <p class="small muted"><b>บน Render ฟรีให้ใช้ Brevo</b> (Render ฟรีปิดพอร์ต SMTP) สมัครฟรีที่ brevo.com ยืนยันอีเมลผู้ส่ง แล้วนำ API key (SMTP &amp; API &gt; API Keys) มาใส่ ช่อง "ผู้ส่ง" ต้องเป็นอีเมลที่ยืนยันกับ Brevo แล้ว ถ้าใส่ Brevo ระบบจะไม่ใช้ SMTP</p>
+    {{ f('brevo_api_key', 'Brevo API key (xkeysib-...)', 'password') }}
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px">{{ f('smtp_host', 'SMTP host') }}{{ f('smtp_port', 'Port') }}</div>
+    {{ f('smtp_user', 'ผู้ใช้') }}{{ f('smtp_password', 'รหัสผ่าน', 'password') }}{{ f('smtp_from', 'ผู้ส่ง (From)', hint='เช่น Golden Beach Resort <booking@gmail.com>') }}
+    {{ f('notify_email', 'อีเมลแอดมินที่รับแจ้งเตือนคำขอจองใหม่', 'email') }}
+  </div>
+  <div class="panel" id="auto"><h2>ระบบอัตโนมัติ</h2>
+    <p class="small muted">ระบบทำงานเองทุก 5 นาที (บนโฮสต์ฟรีที่หลับได้ ให้ตั้ง cron ping ตามคู่มือ) อีเมลถึงลูกค้าต้องตั้ง Brevo หรือ SMTP ด้านล่าง ข้อความกลุ่มต้องตั้ง LINE</p>
+    {{ chk('auto_reject_overlaps', 'อนุมัติแล้วปฏิเสธคำขอที่ชนวันให้อัตโนมัติ', 'พร้อมส่งอีเมลเสนอบ้านหลังอื่นที่ว่างวันเดียวกันให้ลูกค้า') }}
+    {{ chk('auto_payment_reminder', 'เตือนลูกค้าให้ชำระก่อนหมดเวลากันห้อง') }}
+    {{ chk('auto_prearrival', 'ส่งอีเมลวิธีเดินทางและเวลาเช็คอินก่อนเข้าพัก 1 วัน') }}
+    {{ chk('auto_checkout', 'เช็คเอาท์อัตโนมัติเมื่อเลยเวลาเช็คเอาท์ 1 ชั่วโมง', 'บ้านจะเปลี่ยนเป็น "รอทำความสะอาด" และแจ้งแม่บ้าน') }}
+    {{ chk('auto_review_request', 'ส่งอีเมลขอบคุณและขอรีวิวหลังเช็คเอาท์') }}
+    {{ f('google_review_url', 'ลิงก์รีวิว Google / Facebook', hint='เว้นว่าง = ส่งเฉพาะคำขอบคุณ') }}
+    {{ chk('auto_inquiry_reply', 'ตอบอีเมลอัตโนมัติเมื่อมีคนส่งข้อความหรือขอใบเสนอราคาเหมา', 'คำขอเหมาจะบอกให้ทันทีว่าวันนั้นว่างทั้งรีสอร์ทหรือไม่') }}
+    {{ chk('auto_daily_summary', 'สรุปงานประจำวันเข้ากลุ่ม LINE และกระดิ่ง') }}
+    {{ f('daily_summary_time', 'เวลาส่งสรุป', 'time') }}
+    {{ chk('auto_nudge', 'ทวงงานค้าง: คำขอจองหรือสลิปที่ยังไม่มีใครตรวจ') }}
+    {{ f('nudge_minutes', 'ทวงเมื่อค้างเกิน (นาที)', 'number') }}
+    {{ chk('auto_payout', 'สรุปยอดค่าคอมรอจ่ายให้อัตโนมัติทุกวันที่ 1', 'เจ้าของยังต้องกด "จ่ายแล้ว" เอง') }}
+  </div>
+  <div class="panel" id="gateway"><h2>รับชำระออนไลน์ (Opn Payments)</h2>
+    <p class="small muted">ลูกค้าจ่ายด้วย PromptPay QR แบบยืนยันอัตโนมัติ, Mobile Banking และบัตรเครดิต/เดบิต เงินเข้าแล้วระบบยืนยันการจองเองทันที ไม่ต้องตรวจสลิป ต้องสมัครบัญชีร้านค้ากับ Opn Payments (opn.ooo) ก่อน แล้วนำคีย์จากหน้า Keys มาใส่ ตั้ง Webhook ที่ <code>{{ base_url }}/payments/opn/webhook</code></p>
+    {{ chk('online_payment', 'เปิดรับชำระออนไลน์') }}
+    {{ f('opn_public_key', 'Public key (pkey_...)') }}{{ f('opn_secret_key', 'Secret key (skey_...)', 'password') }}
+    {{ chk('opn_cards', 'รับบัตรเครดิต/เดบิต') }}
+    {{ f('opn_methods', 'ช่องทางอื่น (คั่นด้วยจุลภาค)', hint='promptpay, mobile_banking_kbank, mobile_banking_scb, mobile_banking_bay, mobile_banking_bbl, mobile_banking_ktb, truemoney') }}
+    <p class="small muted">การโอนเข้าบัญชีและแนบสลิปยังใช้ได้ตามเดิมเสมอ</p>
+  </div>
+</div>
+<button class="btn" style="min-width:200px">บันทึกการตั้งค่า</button>
+</form>
+{% if user.role == 'owner' %}
+<div class="panel" style="margin-top:24px;max-width:520px">
+  <h2>สำรองข้อมูล</h2>
+  <p class="small muted">ไฟล์เดียวมีทุกอย่าง: การจอง ลูกค้า ค่าคอม รูปบ้าน สลิป และการตั้งค่า ควรดาวน์โหลดเก็บไว้ทุกสัปดาห์ (ฐานข้อมูลฟรีไม่มีระบบสำรองให้) วิธีกู้คืนอยู่ในคู่มือ</p>
+  <a class="btn btn--ghost" href="/admin/backup.zip">ดาวน์โหลดไฟล์สำรอง</a>
+</div>
+{% endif %}
+<form method="post" action="/admin/me/password" id="password" class="panel" style="margin-top:24px;max-width:520px">
+  <h2>เปลี่ยนรหัสผ่านของฉัน</h2>
+  <div class="field"><label>รหัสผ่านเดิม</label><input type="password" name="old" autocomplete="current-password"></div>
+  <div class="field"><label>รหัสผ่านใหม่ (8 ตัวขึ้นไป)</label><input type="password" name="new" autocomplete="new-password"></div>
+  <button class="btn btn--ghost">เปลี่ยนรหัสผ่าน</button>
+</form>
+{% endblock %}

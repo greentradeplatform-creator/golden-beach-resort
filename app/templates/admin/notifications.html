@@ -1,0 +1,10 @@
+{% extends "admin/base.html" %}
+{% block title %}การแจ้งเตือน{% endblock %}
+{% block heading %}การแจ้งเตือน{% endblock %}
+{% block content %}
+<form method="post" action="/admin/notifications/read" class="head-row"><span class="muted">ยังไม่อ่าน {{ unread }} รายการ</span><button class="btn btn--ghost btn--sm">อ่านทั้งหมดแล้ว</button></form>
+<div class="panel"><ul class="log">
+  {% for n in rows %}<li {% if not n.read_at %}style="font-weight:600"{% endif %}><time>{{ thai_date(n.created_at) }} {{ n.created_at.strftime('%H:%M') }}</time>{% if n.link %}<a href="{{ n.link }}">{{ n.title }}</a>{% else %}{{ n.title }}{% endif %} <span class="muted" style="font-weight:400">{{ n.body }}</span></li>
+  {% else %}<li class="empty">ไม่มีการแจ้งเตือน</li>{% endfor %}
+</ul></div>
+{% endblock %}

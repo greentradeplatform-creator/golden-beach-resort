@@ -1,0 +1,61 @@
+{% extends "public/base.html" %}
+{% block title %}{{ tt('เหมารีสอร์ท กรุ๊ปทัวร์ สัมมนา จัดเลี้ยง', 'Whole-resort buyouts, groups and events') }} | {{ tt(conf.resort_name_th, conf.resort_name_en) }}{% endblock %}
+{% block desc %}{{ tt('เหมาทั้งรีสอร์ทริมทะเลนาจอมเทียน 9 หลัง สำหรับครอบครัวใหญ่ กรุ๊ปทัวร์ สัมมนาบริษัท จัดเลี้ยง มีคาราโอเกะ ลานกางเต็นท์ และที่จอดรถ', 'Rent the whole beachfront resort at Na Jomtien: nine houses for family reunions, company retreats and parties, with karaoke, camping lawn and parking.') }}{% endblock %}
+{% block main %}
+<section class="band" style="padding-top:clamp(48px,7vw,88px)">
+  <div class="wrap band__grid">
+    <div>
+      <h1 style="color:#fff">{{ tt('เหมาทั้งรีสอร์ทริมทะเล', 'Take the whole resort') }}</h1>
+      {% if pkg %}
+      <div class="band__price">{{ money(pkg.price) }} <span style="font-size:.4em">{{ tt('บาท / คืน', 'baht / night') }}</span></div>
+      <div>{{ tt(pkg.name_th, pkg.name_en) }} {{ tt('พักได้', 'for up to') }} {{ pkg.guests }} {{ tt('ท่าน', 'guests') }}</div>
+      <ul>{% for line in tt(pkg.includes_th, pkg.includes_en).splitlines() if line.strip() %}<li>{{ line }}</li>{% endfor %}</ul>
+      <p class="small" style="opacity:.8">{{ tt(pkg.note_th, pkg.note_en) }}</p>
+      {% endif %}
+      <a class="btn btn--light" href="#form">{{ tt('ขอใบเสนอราคา', 'Ask for a quote') }}</a>
+    </div>
+    <img class="band__img" src="/static/img/dining-tent.jpg" alt="{{ tt('ลานทานอาหารใต้เต็นท์ริมหาด', 'Dining area under the tent') }}">
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>{{ tt('จัดงานอะไรได้บ้าง', 'What groups use it for') }}</h2>
+    <div class="incl">
+      <div>{{ icon('people', 28) }}<strong>{{ tt('ทริปครอบครัวใหญ่และกรุ๊ปเพื่อน', 'Family reunions and friends') }}</strong><p>{{ tt('บ้าน 9 หลังเรียงกันในรั้วเดียว ไม่มีแขกอื่นปะปน เด็กวิ่งเล่นบนสนามหญ้าได้', 'Nine houses inside one fence with no other guests; kids can run on the lawn.') }}</p></div>
+      <div>{{ icon('board', 28) }}<strong>{{ tt('สัมมนาและประชุมนอกสถานที่', 'Off-site meetings') }}</strong><p>{{ tt('จัดโต๊ะประชุมรับลมทะเลบนลานหรือในศาลา แจ้งจำนวนคนและรูปแบบโต๊ะได้', 'Meeting tables on the lawn or in the pavilion, set up to your headcount.') }}</p></div>
+      <div>{{ icon('bowl', 28) }}<strong>{{ tt('จัดเลี้ยงและซีฟู้ดริมหาด', 'Catering and seafood BBQ') }}</strong><p>{{ tt('สั่งชุดหมูกระทะหรืออาหารทะเลสำหรับทั้งกลุ่ม หรือนำอาหารมาเองและปิ้งย่างบนลาน', 'Order mookata or seafood sets for the group, or bring your own and grill on the lawn.') }}</p></div>
+      <div>{{ icon('mic', 28) }}<strong>{{ tt('คาราโอเกะ', 'Karaoke') }}</strong><p>{{ tt('ชุดคาราโอเกะพร้อมจอใหญ่บนลาน ร้องได้ทั้งคืนเมื่อเหมาทั้งรีสอร์ท', 'A full karaoke set with a big screen on the lawn, all night when you book the whole resort.') }}</p></div>
+      <div>{{ icon('tent', 28) }}<strong>{{ tt('ลานกางเต็นท์', 'Camping lawn') }}</strong><p>{{ tt('สำหรับกลุ่มที่อยากนอนเต็นท์ริมทะเล เพิ่มจำนวนคนได้มากกว่าจำนวนเตียง', 'For groups who want to sleep by the water, or need more spaces than beds.') }}</p></div>
+      <div>{{ icon('car', 28) }}<strong>{{ tt('ที่จอดรถตู้และรถบัส', 'Van and coach parking') }}</strong><p>{{ tt('ลานจอดรถของรีสอร์ทอยู่หน้าทางเข้า', 'The resort car park is right at the entrance.') }}</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="background:var(--sand)" id="form">
+  <div class="wrap" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:clamp(28px,5vw,64px)" data-stack>
+    <div>
+      <h2>{{ tt('ขอใบเสนอราคา', 'Ask for a quote') }}</h2>
+      <p class="lede">{{ tt('บอกวันที่และจำนวนคน ทีมงานจะเช็คว่าทุกหลังว่างและส่งราคาพร้อมรายการให้ภายในวันทำการ', 'Tell us the date and headcount; we check that all houses are free and send a quote within a working day.') }}</p>
+      <p>{{ tt('หรือโทร', 'Or call') }} <a href="tel:{{ conf.phone_main|replace('-','') }}">{{ conf.phone_main }}</a>{% if conf.phone_alt %} / <a href="tel:{{ conf.phone_alt|replace('-','') }}">{{ conf.phone_alt }}</a> {{ conf.phone_alt_label }}{% endif %}</p>
+    </div>
+    <form method="post" action="{{ L }}/inquiry">
+      <input type="hidden" name="kind" value="buyout"><input type="hidden" name="back" value="/buyout">
+      <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <div class="grid2">
+        <div class="field"><label for="q-n">{{ tt('ชื่อผู้ติดต่อ / บริษัท', 'Name or company') }}</label><input id="q-n" name="name" required></div>
+        <div class="field"><label for="q-p">{{ tt('เบอร์โทร', 'Phone') }}</label><input id="q-p" name="phone" type="tel" required></div>
+      </div>
+      <div class="grid3">
+        <div class="field"><label for="q-d">{{ tt('วันที่เข้าพัก', 'Arrival') }}</label><input id="q-d" name="date_from" type="date" min="{{ today }}"></div>
+        <div class="field"><label for="q-ni">{{ tt('จำนวนคืน', 'Nights') }}</label><input id="q-ni" name="nights" type="number" min="1" value="1"></div>
+        <div class="field"><label for="q-g">{{ tt('จำนวนคน', 'People') }}</label><input id="q-g" name="guests" type="number" min="1" value="40"></div>
+      </div>
+      <div class="field"><label for="q-e">{{ tt('อีเมล', 'E-mail') }}</label><input id="q-e" name="email" type="email"></div>
+      <div class="field"><label for="q-m">{{ tt('รายละเอียดงาน', 'Tell us about the event') }}</label><textarea id="q-m" name="message" placeholder="{{ tt('เช่น สัมมนาบริษัท 35 คน ต้องการโต๊ะประชุมช่วงเช้าและซีฟู้ดตอนเย็น', 'e.g. company retreat for 35, meeting tables in the morning and seafood dinner') }}"></textarea></div>
+      <button class="btn" type="submit">{{ tt('ส่งคำขอใบเสนอราคา', 'Send quote request') }}</button>
+    </form>
+  </div>
+</section>
+<style>@media (max-width: 860px) { [data-stack] { grid-template-columns: 1fr !important; } }</style>
+{% endblock %}

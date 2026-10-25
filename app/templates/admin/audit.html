@@ -1,0 +1,10 @@
+{% extends "admin/base.html" %}
+{% block title %}ประวัติการแก้ไข{% endblock %}
+{% block heading %}ประวัติการแก้ไข{% endblock %}
+{% block content %}
+<div class="panel panel--flush"><div class="t-wrap"><table class="t">
+  <thead><tr><th>เวลา</th><th>ผู้ใช้</th><th>การกระทำ</th><th>การจอง</th><th>รายละเอียด</th></tr></thead>
+  <tbody>{% for l in rows %}<tr><td class="nowrap">{{ thai_date(l.created_at) }} {{ l.created_at.strftime('%H:%M') }}</td><td>{{ l.user.display_name if l.user else 'ระบบ/ลูกค้า' }}</td><td>{{ l.action }}</td>
+    <td>{% if l.booking_id %}<a href="/admin/bookings/{{ l.booking_id }}">ดู</a>{% endif %}</td><td>{{ l.detail }}</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

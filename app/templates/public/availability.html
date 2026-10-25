@@ -1,0 +1,36 @@
+{% extends "public/base.html" %}
+{% block title %}{{ tt('ตารางห้องว่าง', 'Availability') }} {{ month_label(first.year, first.month) }} | {{ tt(conf.resort_name_th, conf.resort_name_en) }}{% endblock %}
+{% block desc %}{{ tt('เช็คห้องว่างโกลเด้น บีช รีสอร์ท นาจอมเทียน รายวัน อัปเดตทันทีที่มีการจอง เลือกคืนที่ว่างแล้วจองได้เลย', 'Live availability for all nine houses at Golden Beach Resort, Na Jomtien. Pick a free night and book.') }}{% endblock %}
+{% block main %}
+<div class="page-top">
+  <div class="wrap">
+    <h1>{{ tt('ตารางห้องว่าง', 'Availability') }}</h1>
+    <p>{{ tt('ตารางเดียวกับที่ทีมแอดมินใช้ อัปเดตทันทีที่มีการจอง ช่องสีแดงคือคืนที่มีผู้จองแล้ว กดช่องว่างเพื่อเริ่มจองคืนนั้น', 'The same chart our team works from, updated the moment a booking lands. Red means taken; tap an empty cell to start booking that night.') }}</p>
+  </div>
+</div>
+<div class="wrap" style="padding-bottom:80px">
+  <div class="avail-nav">
+    <h2>{{ month_label(first.year, first.month) }}</h2>
+    {% if prev %}<a class="btn btn--ghost" href="?m={{ prev.strftime('%Y-%m') }}">{{ tt('เดือนก่อน', 'Previous') }}</a>{% endif %}
+    <a class="btn btn--ghost" href="?m={{ nxt.strftime('%Y-%m') }}">{{ tt('เดือนถัดไป', 'Next month') }}</a>
+  </div>
+  <div class="avail-scroll">
+    <table class="avail">
+      <thead><tr><th style="position:sticky;left:0;z-index:2;text-align:left;padding-left:14px">{{ tt('บ้าน', 'House') }}</th>
+        {% for d in days %}<th class="{% if d.weekday() in (4,5) %}is-wknd{% endif %}">{{ d.day }}<small>{{ dow[d.weekday()] }}</small></th>{% endfor %}</tr></thead>
+      <tbody>
+        {% for h in houses %}{% set g = grid.get(h.id, {}) %}
+        <tr><th><a href="{{ L }}/houses/{{ h.slug }}" style="color:inherit;text-decoration:none">{{ h.name(lang) }}</a><small>{{ tt(KINDS[h.kind][0], KINDS[h.kind][1]) }} {{ money(h.price_weekday) }}</small></th>
+          {% for d in days %}
+            {% if d < today %}<td class="is-past"></td>
+            {% elif d in g %}<td class="is-taken" title="{{ tt('ไม่ว่าง', 'Taken') }}"><span class="sr-only">{{ tt('ไม่ว่าง', 'Taken') }}</span></td>
+            {% else %}<td><a href="{{ L }}/book?house={{ h.slug }}&ci={{ d }}&co={{ d.fromordinal(d.toordinal()+1) }}" style="display:block;height:46px" aria-label="{{ h.name(lang) }} {{ thai_date(d) }} {{ tt('ว่าง', 'free') }}"></a></td>{% endif %}
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="small muted" style="margin-top:12px">{{ tt('คอลัมน์สีเทาอ่อนคือคืนวันศุกร์และวันเสาร์', 'Shaded columns are Friday and Saturday nights.') }}</p>
+</div>
+{% endblock %}

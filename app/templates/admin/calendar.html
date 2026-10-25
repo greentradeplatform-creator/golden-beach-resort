@@ -1,0 +1,70 @@
+{% extends "admin/base.html" %}
+{% block title %}ปฏิทินรีสอร์ท{% endblock %}
+{% block heading %}ปฏิทินรีสอร์ท{% endblock %}
+{% block content %}
+<div class="head-row">
+  <div class="actions">
+    <a class="btn btn--ghost btn--sm" href="?start={{ prev }}&days={{ days }}">ก่อนหน้า</a>
+    <a class="btn btn--ghost btn--sm" href="?days={{ days }}">วันนี้</a>
+    <a class="btn btn--ghost btn--sm" href="?start={{ nxt }}&days={{ days }}">ถัดไป</a>
+    <form class="inline" method="get"><input type="date" name="start" value="{{ start }}" onchange="this.form.submit()" style="width:auto;min-height:32px;padding:3px 8px"><input type="hidden" name="days" value="{{ days }}"></form>
+  </div>
+  <div class="cal-legend">
+    <span><i style="background:#F3F8EE;border:1px solid #DDE8D2"></i>ว่าง</span>
+    <span><i style="background:#F0A33A"></i>คำขอรออนุมัติ</span>
+    <span><i style="background:#E2B93B"></i>กันห้อง รอชำระ/ตรวจสลิป</span>
+    <span><i style="background:var(--taken)"></i>ชำระแล้ว</span>
+    <span><i style="background:#2F6DB5"></i>กำลังเข้าพัก</span>
+    <span><i style="background:#8A8580"></i>ปิดห้อง / Airbnb</span>
+  </div>
+</div>
+
+<div class="cal-wrap">
+  <table class="cal">
+    <thead><tr><th style="position:sticky;left:0;z-index:3;background:#fff;text-align:left;padding-left:12px">บ้าน</th>
+      {% for d in dates %}<th class="{% if d == today %}is-today{% elif d.weekday() in (4,5) %}is-wknd{% endif %}">{% if d.day == 1 or loop.first %}<small style="color:var(--teak)">{{ thai_date(d, year=False).split(' ')[1] }}</small>{% else %}<small>{{ dow[d.weekday()] }}</small>{% endif %}{{ d.day }}</th>{% endfor %}</tr></thead>
+    <tbody>
+      {% for h in houses %}{% set g = grid.get(h.id, {}) %}
+      <tr><th>{{ h.name_th }}<small>{{ KINDS[h.kind][0] }} {{ money(h.price_weekday) }}</small></th>
+        {% for d in dates %}{% set c = g.get(d) %}
+          {% if c %}
+            {% set show = c.first or loop.first %}
+            <td class="c-{{ c.status }} {% if c.first %}is-first{% endif %} {% if d < today %}is-past{% endif %}">
+              {% if c.booking_id %}<a href="/admin/bookings/{{ c.booking_id }}" title="{{ c.code }} {{ c.name }} ({{ c.channel }})">{% if show %}{{ c.name }}{% endif %}</a>
+              {% else %}<button type="button" title="{{ c.name }}" onclick="if(confirm('เปิดห้องช่วงนี้ ({{ c.name }})?')) document.getElementById('unblock-{{ c.block_id }}').submit()">{% if show %}{{ c.name }}{% endif %}</button>
+                <form id="unblock-{{ c.block_id }}" method="post" action="/admin/blocks/{{ c.block_id }}/delete" hidden></form>{% endif %}
+            </td>
+          {% else %}
+            <td class="c-free {% if d < today %}is-past{% endif %}" data-h="{{ h.id }}" data-d="{{ d }}" data-n="{{ d.fromordinal(d.toordinal()+1) }}" title="{{ h.name_th }} {{ thai_date(d) }} ว่าง กดเพื่อจอง"></td>
+          {% endif %}
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="small muted" style="margin-top:8px">กดช่องว่างเพื่อสร้างการจองคืนนั้น กดแถบสีเพื่อเปิดรายการจอง</p>
+
+<div class="cols" style="margin-top:20px">
+  <div class="panel">
+    <h2>ภาพตารางห้องพักสำหรับโพสต์</h2>
+    <p class="small muted">สร้างภาพ PNG ตารางห้องว่างเดือน {{ export.title_month }} แบบเดียวกับที่โพสต์ใน Facebook (แสดงเฉพาะว่าง/ไม่ว่าง ไม่มีชื่อลูกค้า)</p>
+    <button class="btn" type="button" data-export='{{ export.data|tojs }}'>ดาวน์โหลดภาพตารางเดือนนี้</button>
+  </div>
+  {% if user.role in ('owner','manager') %}
+  <div class="panel">
+    <h2>ปิดห้อง</h2>
+    <p class="small muted">ซ่อมแซม เจ้าของใช้ หรือกันไว้ให้ลูกค้าพิเศษ ระบบจะไม่ให้จองช่วงนี้</p>
+    <form method="post" action="/admin/blocks">
+      <div class="field"><label>บ้าน</label><select name="house_id">{% for h in houses %}<option value="{{ h.id }}">{{ h.name_th }}</option>{% endfor %}</select></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field"><label>ตั้งแต่คืนวันที่</label><input type="date" name="start_date" value="{{ today }}" required></div>
+        <div class="field"><label>ถึงวันที่ (เปิดคืน)</label><input type="date" name="end_date" required></div>
+      </div>
+      <div class="field"><label>เหตุผล</label><input name="reason" placeholder="เช่น ซ่อมแอร์"></div>
+      <button class="btn btn--ghost">ปิดห้องช่วงนี้</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
